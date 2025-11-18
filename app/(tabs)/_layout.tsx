@@ -15,6 +15,10 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
         tabBarButton: HapticTab,
+        tabBarStyle: {
+          height: 60,
+          paddingBottom: 8,
+        },
       }}>
       <Tabs.Screen
         name="index"
@@ -24,10 +28,24 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="accounts"
+        options={{
+          title: 'Accounts',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="creditcard.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="explore"
         options={{
           title: 'Transactions',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="list.bullet" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="bills"
+        options={{
+          title: 'Bills',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="doc.text.fill" color={color} />,
         }}
       />
       <Tabs.Screen

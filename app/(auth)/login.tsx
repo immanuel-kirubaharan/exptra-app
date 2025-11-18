@@ -18,12 +18,43 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const { signIn, signUp } = useAuth();
   const router = useRouter();
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      setEmailError('Email is required');
+      return false;
+    }
+    if (!emailRegex.test(email)) {
+      setEmailError('Please enter a valid email address');
+      return false;
+    }
+    setEmailError('');
+    return true;
+  };
+
+  const validatePassword = (password: string): boolean => {
+    if (!password) {
+      setPasswordError('Password is required');
+      return false;
+    }
+    if (isSignUp && password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return false;
+    }
+    setPasswordError('');
+    return true;
+  };
+
   const handleAuth = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+
+    if (!isEmailValid || !isPasswordValid) {
       return;
     }
 
@@ -31,12 +62,13 @@ export default function LoginScreen() {
     try {
       if (isSignUp) {
         await signUp(email, password);
-        Alert.alert('Success', 'Account created successfully!');
+        Alert.alert('Success', 'Account created successfully! Please log in.');
+        setIsSignUp(false);
       } else {
         await signIn(email, password);
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      Alert.alert('Authentication Failed', error.message);
     } finally {
       setLoading(false);
     }
@@ -48,31 +80,52 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
-        <Text style={styles.title}>Exptra-AI</Text>
-        <Text style={styles.subtitle}>Smart Expense Tracker</Text>
+        <View style={styles.logoContainer}>
+          <View style={styles.logo}>
+            <Text style={styles.logoText}>💰</Text>
+          </View>
+          <Text style={styles.title}>Exptra-AI</Text>
+          <Text style={styles.subtitle}>Smart Expense Tracker</Text>
+        </View>
 
         <View style={styles.formContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholderTextColor="#999"
-          />
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Email</Text>
+            <TextInput
+              style={[styles.input, emailError ? styles.inputError : null]}
+              placeholder="Enter your email"
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                setEmailError('');
+              }}
+              onBlur={() => validateEmail(email)}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholderTextColor="#999"
+            />
+            {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+          </View>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            placeholderTextColor="#999"
-          />
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Password</Text>
+            <TextInput
+              style={[styles.input, passwordError ? styles.inputError : null]}
+              placeholder={isSignUp ? "At least 6 characters" : "Enter your password"}
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                setPasswordError('');
+              }}
+              onBlur={() => validatePassword(password)}
+              secureTextEntry
+              placeholderTextColor="#999"
+            />
+            {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+          </View>
 
           <TouchableOpacity
-            style={styles.button}
+            style={[styles.button, loading ? styles.buttonDisabled : null]}
             onPress={handleAuth}
             disabled={loading}
           >
@@ -80,19 +133,24 @@ export default function LoginScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.buttonText}>
-                {isSignUp ? 'Sign Up' : 'Login'}
+                {isSignUp ? 'Create Account' : 'Sign In'}
               </Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => setIsSignUp(!isSignUp)}
+            onPress={() => {
+              setIsSignUp(!isSignUp);
+              setEmailError('');
+              setPasswordError('');
+            }}
             style={styles.switchButton}
+            disabled={loading}
           >
             <Text style={styles.switchText}>
               {isSignUp
-                ? 'Already have an account? Login'
-                : "Don't have an account? Sign Up"}
+                ? 'Already have an account? Sign In'
+                : "Don't have an account? Create one"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -104,56 +162,102 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
   },
   content: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: 24,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 48,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#2196F3',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#2196F3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  logoText: {
+    fontSize: 40,
   },
   title: {
-    fontSize: 48,
+    fontSize: 36,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
     color: '#2196F3',
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 16,
     textAlign: 'center',
-    marginBottom: 50,
     color: '#666',
   },
   formContainer: {
     width: '100%',
   },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
   input: {
     backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
+    padding: 16,
+    borderRadius: 12,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+  },
+  inputError: {
+    borderColor: '#F44336',
+  },
+  errorText: {
+    color: '#F44336',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
   button: {
     backgroundColor: '#2196F3',
-    padding: 15,
-    borderRadius: 10,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 12,
+    shadowColor: '#2196F3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   switchButton: {
-    marginTop: 20,
+    marginTop: 24,
     alignItems: 'center',
   },
   switchText: {
     color: '#2196F3',
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '500',
   },
 });

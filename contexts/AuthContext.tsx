@@ -7,13 +7,17 @@ import {
   User
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isNetworkError, getNetworkErrorMessage } from '../utils/networkUtils';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +25,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -32,22 +37,77 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    try {
+      setError(null);
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (err: any) {
+      const errorMessage = isNetworkError(err) 
+        ? getNetworkErrorMessage() 
+        : getErrorMessage(err.code);
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   const signUp = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+    try {
+      setError(null);
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (err: any) {
+      const errorMessage = isNetworkError(err) 
+        ? getNetworkErrorMessage() 
+        : getErrorMessage(err.code);
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   const signOut = async () => {
-    await firebaseSignOut(auth);
+    try {
+      await firebaseSignOut(auth);
+      // Clear cached data on sign out
+      const uid = user?.uid;
+      if (uid) {
+        await AsyncStorage.removeItem(`user_settings_${uid}`);
+      }
+    } catch (err: any) {
+      console.error('Error signing out:', err);
+      throw err;
+    }
+  };
+
+  const clearError = () => {
+    setError(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, loading, error, signIn, signUp, signOut, clearError }}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+const getErrorMessage = (errorCode: string): string => {
+  switch (errorCode) {
+    case 'auth/invalid-email':
+      return 'Invalid email address format';
+    case 'auth/user-disabled':
+      return 'This account has been disabled';
+    case 'auth/user-not-found':
+      return 'No account found with this email';
+    case 'auth/wrong-password':
+      return 'Incorrect password';
+    case 'auth/email-already-in-use':
+      return 'An account already exists with this email';
+    case 'auth/weak-password':
+      return 'Password should be at least 6 characters';
+    case 'auth/network-request-failed':
+      return 'Network error. Please check your internet connection';
+    case 'auth/too-many-requests':
+      return 'Too many failed attempts. Please try again later';
+    default:
+      return 'An error occurred. Please try again';
+  }
 };
 
 export const useAuth = () => {

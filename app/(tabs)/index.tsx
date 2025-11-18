@@ -10,23 +10,34 @@ import {
 } from 'react-native';
 import { useApp } from '../../contexts/AppContext';
 import { useTransactions, Transaction } from '../../contexts/TransactionContext';
+import { useAccounts } from '../../contexts/AccountContext';
 import Speedometer from '../../components/Speedometer';
 import { CATEGORY_ICONS } from '../../constants/categories';
+import { useRouter } from 'expo-router';
 
 export default function DashboardScreen() {
   const { settings } = useApp();
-  const { getMonthlyTransactions, getTotalExpense, getTotalIncome, bills } = useTransactions();
+  const { getMonthlyTransactions, getTotalExpense, getTotalIncome, getPendingBills, getOverdueBills } = useTransactions();
+  const { getTotalBalance } = useAccounts();
+  const router = useRouter();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [refreshing, setRefreshing] = useState(false);
+  const [transactionFilter, setTransactionFilter] = useState<'all' | 'income' | 'expense'>('all');
 
   const monthlyTransactions = getMonthlyTransactions(selectedYear, selectedMonth);
+  const filteredTransactions = monthlyTransactions.filter(t => {
+    if (transactionFilter === 'all') return true;
+    return t.type === transactionFilter;
+  });
   const totalExpense = getTotalExpense(selectedYear, selectedMonth);
   const totalIncome = getTotalIncome(selectedYear, selectedMonth);
   const remainingBudget = Math.max(settings.monthlyBudget - totalExpense, 0);
   
-  const pendingBills = bills.reduce((sum, bill) => sum + bill.amount, 0);
-  const bankBalance = 0;
+  const pendingBills = getPendingBills(selectedYear, selectedMonth);
+  const overdueBills = getOverdueBills();
+  const totalPendingAmount = [...pendingBills, ...overdueBills].reduce((sum, bill) => sum + bill.amount, 0);
+  const bankBalance = getTotalBalance();
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -36,11 +47,13 @@ export default function DashboardScreen() {
   const renderTransaction = ({ item }: { item: Transaction }) => (
     <View style={styles.transactionItem}>
       <View style={styles.transactionIcon}>
-        <Text style={styles.iconText}>{CATEGORY_ICONS[item.category]}</Text>
+        <Text style={styles.iconText}>{CATEGORY_ICONS[item.category] || '💰'}</Text>
       </View>
       <View style={styles.transactionDetails}>
         <Text style={styles.transactionCategory}>{item.category}</Text>
-        <Text style={styles.transactionAccount}>{item.bankName} • {item.account}</Text>
+        <Text style={styles.transactionAccount}>
+          {item.accountName || item.bankName}
+        </Text>
         <Text style={styles.transactionDate}>
           {new Date(item.date).toLocaleDateString()}
         </Text>
@@ -75,15 +88,23 @@ export default function DashboardScreen() {
       </View>
 
       <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
+        <TouchableOpacity 
+          style={styles.statCard}
+          onPress={() => router.push('/accounts' as any)}
+        >
           <Text style={styles.statLabel}>Bank Balance</Text>
-          <Text style={styles.statValue}>₹****</Text>
-          <Text style={styles.statHint}>Tap to reveal</Text>
-        </View>
-        <View style={styles.statCard}>
+          <Text style={styles.statValue}>₹{bankBalance.toLocaleString()}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.statCard}
+          onPress={() => router.push('/bills' as any)}
+        >
           <Text style={styles.statLabel}>Pending Bills</Text>
-          <Text style={styles.statValue}>₹{pendingBills.toLocaleString()}</Text>
-        </View>
+          <Text style={styles.statValue}>₹{totalPendingAmount.toLocaleString()}</Text>
+          {overdueBills.length > 0 && (
+            <Text style={styles.overdueHint}>{overdueBills.length} overdue</Text>
+          )}
+        </TouchableOpacity>
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>Total Spent</Text>
           <Text style={styles.statValue}>₹{totalExpense.toLocaleString()}</Text>
@@ -93,31 +114,40 @@ export default function DashboardScreen() {
       <View style={styles.transactionsSection}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/explore' as any)}>
             <Text style={styles.viewAll}>View All</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.transactionTabs}>
-          <TouchableOpacity style={styles.tab}>
-            <Text style={styles.tabText}>All</Text>
+          <TouchableOpacity 
+            style={[styles.tab, transactionFilter === 'all' && styles.activeTab]}
+            onPress={() => setTransactionFilter('all')}
+          >
+            <Text style={[styles.tabText, transactionFilter === 'all' && styles.activeTabText]}>All</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.tab}>
-            <Text style={styles.tabText}>Income</Text>
+          <TouchableOpacity 
+            style={[styles.tab, transactionFilter === 'income' && styles.activeTab]}
+            onPress={() => setTransactionFilter('income')}
+          >
+            <Text style={[styles.tabText, transactionFilter === 'income' && styles.activeTabText]}>Income</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.tab}>
-            <Text style={styles.tabText}>Expense</Text>
+          <TouchableOpacity 
+            style={[styles.tab, transactionFilter === 'expense' && styles.activeTab]}
+            onPress={() => setTransactionFilter('expense')}
+          >
+            <Text style={[styles.tabText, transactionFilter === 'expense' && styles.activeTabText]}>Expense</Text>
           </TouchableOpacity>
         </View>
 
-        {monthlyTransactions.length === 0 ? (
+        {filteredTransactions.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No transactions yet</Text>
             <Text style={styles.emptySubtext}>Transactions will appear here</Text>
           </View>
         ) : (
           <FlatList
-            data={monthlyTransactions.slice(0, 10)}
+            data={filteredTransactions.slice(0, 10)}
             renderItem={renderTransaction}
             keyExtractor={(item) => item.id}
             scrollEnabled={false}
@@ -203,6 +233,12 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 3,
   },
+  overdueHint: {
+    fontSize: 10,
+    color: '#F44336',
+    marginTop: 3,
+    fontWeight: '600',
+  },
   transactionsSection: {
     backgroundColor: '#fff',
     margin: 15,
@@ -235,9 +271,17 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#f5f5f5',
   },
+  activeTab: {
+    backgroundColor: '#2196F3',
+  },
   tabText: {
     fontSize: 14,
     color: '#666',
+    fontWeight: '500',
+  },
+  activeTabText: {
+    color: '#fff',
+    fontWeight: '600',
   },
   transactionItem: {
     flexDirection: 'row',

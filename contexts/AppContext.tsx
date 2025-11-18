@@ -1,5 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
 import { useAuth } from './AuthContext';
 
 export interface UserSettings {
@@ -11,6 +13,7 @@ export interface UserSettings {
 
 interface AppContextType {
   settings: UserSettings;
+  loading: boolean;
   updateSettings: (settings: Partial<UserSettings>) => Promise<void>;
   loadSettings: () => Promise<void>;
 }
@@ -27,23 +30,51 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  const [loading, setLoading] = useState(true);
 
   const loadSettings = async () => {
     if (!user) {
       setSettings(defaultSettings);
+      setLoading(false);
       return;
     }
     
+    setLoading(true);
     try {
-      const storedSettings = await AsyncStorage.getItem(`user_settings_${user.uid}`);
-      if (storedSettings) {
-        setSettings(JSON.parse(storedSettings));
+      // Try to load from Firestore first
+      const docRef = doc(db, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data() as UserSettings;
+        setSettings(data);
+        // Cache in AsyncStorage for offline access
+        await AsyncStorage.setItem(`user_settings_${user.uid}`, JSON.stringify(data));
       } else {
-        setSettings(defaultSettings);
+        // Fallback to AsyncStorage if Firestore data doesn't exist
+        const storedSettings = await AsyncStorage.getItem(`user_settings_${user.uid}`);
+        if (storedSettings) {
+          setSettings(JSON.parse(storedSettings));
+        } else {
+          setSettings(defaultSettings);
+        }
       }
     } catch (error) {
       console.error('Error loading settings:', error);
-      setSettings(defaultSettings);
+      // Try AsyncStorage as fallback
+      try {
+        const storedSettings = await AsyncStorage.getItem(`user_settings_${user.uid}`);
+        if (storedSettings) {
+          setSettings(JSON.parse(storedSettings));
+        } else {
+          setSettings(defaultSettings);
+        }
+      } catch (e) {
+        console.error('Error loading from AsyncStorage:', e);
+        setSettings(defaultSettings);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -54,12 +85,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setSettings(updatedSettings);
     
     try {
+      // Save to both Firestore and AsyncStorage
+      const docRef = doc(db, 'users', user.uid);
+      await setDoc(docRef, updatedSettings, { merge: true });
+      
       await AsyncStorage.setItem(
         `user_settings_${user.uid}`,
         JSON.stringify(updatedSettings)
       );
     } catch (error) {
       console.error('Error saving settings:', error);
+      // Still try to save to AsyncStorage if Firestore fails
+      try {
+        await AsyncStorage.setItem(
+          `user_settings_${user.uid}`,
+          JSON.stringify(updatedSettings)
+        );
+      } catch (e) {
+        console.error('Error saving to AsyncStorage:', e);
+      }
     }
   };
 
@@ -68,7 +112,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   return (
-    <AppContext.Provider value={{ settings, updateSettings, loadSettings }}>
+    <AppContext.Provider value={{ settings, loading, updateSettings, loadSettings }}>
       {children}
     </AppContext.Provider>
   );

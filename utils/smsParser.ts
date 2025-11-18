@@ -6,7 +6,8 @@ interface SMSPattern {
   extractData: (message: string) => {
     amount: number;
     type: 'income' | 'expense';
-    account: string;
+    accountId: string;
+    accountName: string;
     description: string;
   } | null;
 }
@@ -24,7 +25,8 @@ const smsPatterns: SMSPattern[] = [
         return {
           amount: parseFloat(debitMatch[1].replace(/,/g, '')),
           type: 'expense',
-          account: accountMatch ? accountMatch[1] : 'Unknown',
+          accountId: accountMatch ? `sbi_${accountMatch[1]}` : 'sbi_unknown',
+          accountName: accountMatch ? `SBI x${accountMatch[1]}` : 'SBI Account',
           description: msg.substring(0, 100),
         };
       }
@@ -33,7 +35,8 @@ const smsPatterns: SMSPattern[] = [
         return {
           amount: parseFloat(creditMatch[1].replace(/,/g, '')),
           type: 'income',
-          account: accountMatch ? accountMatch[1] : 'Unknown',
+          accountId: accountMatch ? `sbi_${accountMatch[1]}` : 'sbi_unknown',
+          accountName: accountMatch ? `SBI x${accountMatch[1]}` : 'SBI Account',
           description: msg.substring(0, 100),
         };
       }
@@ -53,7 +56,8 @@ const smsPatterns: SMSPattern[] = [
         return {
           amount: parseFloat(debitMatch[1].replace(/,/g, '')),
           type: 'expense',
-          account: accountMatch ? accountMatch[1] : 'Unknown',
+          accountId: accountMatch ? `hdfc_${accountMatch[1]}` : 'hdfc_unknown',
+          accountName: accountMatch ? `HDFC x${accountMatch[1]}` : 'HDFC Account',
           description: msg.substring(0, 100),
         };
       }
@@ -62,7 +66,8 @@ const smsPatterns: SMSPattern[] = [
         return {
           amount: parseFloat(creditMatch[1].replace(/,/g, '')),
           type: 'income',
-          account: accountMatch ? accountMatch[1] : 'Unknown',
+          accountId: accountMatch ? `hdfc_${accountMatch[1]}` : 'hdfc_unknown',
+          accountName: accountMatch ? `HDFC x${accountMatch[1]}` : 'HDFC Account',
           description: msg.substring(0, 100),
         };
       }
@@ -82,7 +87,8 @@ const smsPatterns: SMSPattern[] = [
         return {
           amount: parseFloat(debitMatch[1].replace(/,/g, '')),
           type: 'expense',
-          account: accountMatch ? accountMatch[1] : 'Unknown',
+          accountId: accountMatch ? `icici_${accountMatch[1]}` : 'icici_unknown',
+          accountName: accountMatch ? `ICICI x${accountMatch[1]}` : 'ICICI Account',
           description: msg.substring(0, 100),
         };
       }
@@ -91,7 +97,8 @@ const smsPatterns: SMSPattern[] = [
         return {
           amount: parseFloat(creditMatch[1].replace(/,/g, '')),
           type: 'income',
-          account: accountMatch ? accountMatch[1] : 'Unknown',
+          accountId: accountMatch ? `icici_${accountMatch[1]}` : 'icici_unknown',
+          accountName: accountMatch ? `ICICI x${accountMatch[1]}` : 'ICICI Account',
           description: msg.substring(0, 100),
         };
       }
@@ -111,7 +118,8 @@ const smsPatterns: SMSPattern[] = [
         return {
           amount: parseFloat(debitMatch[1].replace(/,/g, '')),
           type: 'expense',
-          account: accountMatch ? accountMatch[1] : 'Unknown',
+          accountId: accountMatch ? `axis_${accountMatch[1]}` : 'axis_unknown',
+          accountName: accountMatch ? `Axis x${accountMatch[1]}` : 'Axis Account',
           description: msg.substring(0, 100),
         };
       }
@@ -120,7 +128,8 @@ const smsPatterns: SMSPattern[] = [
         return {
           amount: parseFloat(creditMatch[1].replace(/,/g, '')),
           type: 'income',
-          account: accountMatch ? accountMatch[1] : 'Unknown',
+          accountId: accountMatch ? `axis_${accountMatch[1]}` : 'axis_unknown',
+          accountName: accountMatch ? `Axis x${accountMatch[1]}` : 'Axis Account',
           description: msg.substring(0, 100),
         };
       }
@@ -140,7 +149,8 @@ const smsPatterns: SMSPattern[] = [
         return {
           amount: parseFloat(debitMatch[1].replace(/,/g, '')),
           type: 'expense',
-          account: accountMatch ? accountMatch[1] : 'Unknown',
+          accountId: accountMatch ? `kotak_${accountMatch[1]}` : 'kotak_unknown',
+          accountName: accountMatch ? `Kotak x${accountMatch[1]}` : 'Kotak Account',
           description: msg.substring(0, 100),
         };
       }
@@ -149,7 +159,8 @@ const smsPatterns: SMSPattern[] = [
         return {
           amount: parseFloat(creditMatch[1].replace(/,/g, '')),
           type: 'income',
-          account: accountMatch ? accountMatch[1] : 'Unknown',
+          accountId: accountMatch ? `kotak_${accountMatch[1]}` : 'kotak_unknown',
+          accountName: accountMatch ? `Kotak x${accountMatch[1]}` : 'Kotak Account',
           description: msg.substring(0, 100),
         };
       }

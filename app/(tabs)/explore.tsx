@@ -11,11 +11,13 @@ import {
   FlatList,
 } from 'react-native';
 import { useTransactions, Transaction } from '../../contexts/TransactionContext';
+import { useAccounts } from '../../contexts/AccountContext';
 import { useApp } from '../../contexts/AppContext';
 import { CATEGORIES, CATEGORY_ICONS } from '../../constants/categories';
 
 export default function TransactionsScreen() {
   const { transactions, addTransaction, deleteTransaction, updateTransaction } = useTransactions();
+  const { accounts, updateAccountBalance } = useAccounts();
   const { settings } = useApp();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -24,8 +26,7 @@ export default function TransactionsScreen() {
     type: 'expense' as 'income' | 'expense',
     amount: '',
     category: '',
-    account: '',
-    bankName: '',
+    accountId: '',
     description: '',
   });
 
@@ -42,20 +43,51 @@ export default function TransactionsScreen() {
       return;
     }
 
+    if (!formData.accountId) {
+      Alert.alert('Error', 'Please select an account');
+      return;
+    }
+
+    const selectedAccount = accounts.find(a => a.id === formData.accountId);
+    if (!selectedAccount) {
+      Alert.alert('Error', 'Invalid account selected');
+      return;
+    }
+
     const transaction = {
       type: formData.type,
       amount,
       category: formData.category,
-      account: formData.account || 'Manual Entry',
-      bankName: formData.bankName || 'Manual',
+      accountId: formData.accountId,
+      accountName: selectedAccount.name,
+      bankName: selectedAccount.bankName || selectedAccount.name,
       description: formData.description,
       date: new Date(),
       isManual: true,
     };
 
     if (editingTransaction) {
+      // Update account balances
+      const oldAccount = accounts.find(a => a.id === editingTransaction.accountId);
+      if (oldAccount && oldAccount.id === formData.accountId) {
+        // Same account, adjust the difference
+        const diff = amount - editingTransaction.amount;
+        const operation = formData.type === 'income' ? 'add' : 'subtract';
+        await updateAccountBalance(formData.accountId, Math.abs(diff), operation);
+      } else {
+        // Different account, reverse old and apply new
+        if (oldAccount) {
+          const reverseOp = editingTransaction.type === 'income' ? 'subtract' : 'add';
+          await updateAccountBalance(oldAccount.id, editingTransaction.amount, reverseOp);
+        }
+        const operation = formData.type === 'income' ? 'add' : 'subtract';
+        await updateAccountBalance(formData.accountId, amount, operation);
+      }
       await updateTransaction(editingTransaction.id, transaction);
     } else {
+      // Update account balance
+      const operation = formData.type === 'income' ? 'add' : 'subtract';
+      await updateAccountBalance(formData.accountId, amount, operation);
       await addTransaction(transaction);
     }
     
@@ -68,8 +100,7 @@ export default function TransactionsScreen() {
       type: 'expense',
       amount: '',
       category: '',
-      account: '',
-      bankName: '',
+      accountId: '',
       description: '',
     });
     setEditingTransaction(null);
@@ -81,8 +112,7 @@ export default function TransactionsScreen() {
       type: transaction.type,
       amount: transaction.amount.toString(),
       category: transaction.category,
-      account: transaction.account,
-      bankName: transaction.bankName,
+      accountId: transaction.accountId,
       description: transaction.description,
     });
     setModalVisible(true);
@@ -110,7 +140,7 @@ export default function TransactionsScreen() {
       </View>
       <View style={styles.transactionDetails}>
         <Text style={styles.transactionCategory}>{item.category}</Text>
-        <Text style={styles.transactionAccount}>{item.bankName} • {item.account}</Text>
+        <Text style={styles.transactionAccount}>{item.bankName} • {item.accountName}</Text>
         <Text style={styles.transactionDescription} numberOfLines={1}>
           {item.description || 'No description'}
         </Text>
@@ -216,19 +246,23 @@ export default function TransactionsScreen() {
               ))}
             </ScrollView>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Account (Optional)"
-              value={formData.account}
-              onChangeText={(text) => setFormData({ ...formData, account: text })}
-            />
-
-            <TextInput
-              style={styles.input}
-              placeholder="Bank Name (Optional)"
-              value={formData.bankName}
-              onChangeText={(text) => setFormData({ ...formData, bankName: text })}
-            />
+            <Text style={styles.label}>Account *</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.accountScroll}>
+              {accounts.map((account) => (
+                <TouchableOpacity
+                  key={account.id}
+                  style={[
+                    styles.accountChip,
+                    formData.accountId === account.id && styles.accountChipActive
+                  ]}
+                  onPress={() => setFormData({ ...formData, accountId: account.id })}
+                >
+                  <Text style={styles.accountChipText}>
+                    {account.type === 'bank' ? '🏦' : account.type === 'cash' ? '💵' : account.type === 'credit_card' ? '💳' : '👛'} {account.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
             <TextInput
               style={styles.input}
@@ -445,6 +479,27 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 12,
     color: '#666',
+  },
+  accountScroll: {
+    marginBottom: 15,
+  },
+  accountChip: {
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: '#f5f5f5',
+    marginRight: 10,
+    minWidth: 100,
+    borderWidth: 2,
+    borderColor: '#f5f5f5',
+  },
+  accountChipActive: {
+    backgroundColor: '#E3F2FD',
+    borderColor: '#2196F3',
+  },
+  accountChipText: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '500',
   },
   modalButtons: {
     flexDirection: 'row',
