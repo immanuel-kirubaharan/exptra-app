@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import { Platform, PermissionsAndroid } from 'react-native';
 import { parseBankingSMS, detectCategory } from './smsParser';
 import { Transaction } from '../contexts/TransactionContext';
-import NativeSMSReader, { SMSMessage as NativeSMSMessage } from './nativeSMSReader';
 
+// Sample SMS messages for testing/development
 interface SMSMessage {
   id: string;
   address: string;
@@ -27,11 +27,41 @@ export class SMSService {
   }
 
   async requestSMSPermission(): Promise<boolean> {
-    return await NativeSMSReader.requestReadPermission();
+    if (Platform.OS !== 'android') {
+      return false;
+    }
+
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.READ_SMS,
+        {
+          title: 'SMS Permission',
+          message: 'Exptra needs access to read SMS for automatic transaction tracking',
+          buttonPositive: 'Allow',
+          buttonNegative: 'Deny',
+        }
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (error) {
+      console.error('Error requesting SMS permission:', error);
+      return false;
+    }
   }
 
   async checkSMSPermission(): Promise<boolean> {
-    return await NativeSMSReader.checkReadPermission();
+    if (Platform.OS !== 'android') {
+      return false;
+    }
+
+    try {
+      const granted = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.READ_SMS
+      );
+      return granted;
+    } catch (error) {
+      console.error('Error checking SMS permission:', error);
+      return false;
+    }
   }
 
   async getProcessedSMSIds(): Promise<Set<string>> {
@@ -51,10 +81,7 @@ export class SMSService {
     try {
       const processedIds = await this.getProcessedSMSIds();
       processedIds.add(id);
-      await AsyncStorage.setItem(
-        PROCESSED_SMS_KEY,
-        JSON.stringify(Array.from(processedIds))
-      );
+      await AsyncStorage.setItem(PROCESSED_SMS_KEY, JSON.stringify(Array.from(processedIds)));
     } catch (error) {
       console.error('Error saving processed SMS ID:', error);
     }
@@ -63,186 +90,184 @@ export class SMSService {
   async getLastSMSReadTime(): Promise<number> {
     try {
       const lastTime = await AsyncStorage.getItem(LAST_SMS_READ_TIME);
-      return lastTime ? parseInt(lastTime) : 0;
+      return lastTime ? parseInt(lastTime, 10) : 0;
     } catch (error) {
       console.error('Error getting last SMS read time:', error);
       return 0;
     }
   }
 
-  async updateLastSMSReadTime(): Promise<void> {
+  async saveLastSMSReadTime(timestamp: number): Promise<void> {
     try {
-      await AsyncStorage.setItem(LAST_SMS_READ_TIME, Date.now().toString());
+      await AsyncStorage.setItem(LAST_SMS_READ_TIME, timestamp.toString());
     } catch (error) {
-      console.error('Error updating last SMS read time:', error);
+      console.error('Error saving last SMS read time:', error);
     }
   }
 
-  async readAllSMS(): Promise<SMSMessage[]> {
-    if (Platform.OS !== 'android') {
-      console.log('SMS reading is only available on Android');
-      return [];
-    }
+  // Generate sample SMS messages for testing
+  private generateSampleSMS(): SMSMessage[] {
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
 
-    const hasPermission = await this.checkSMSPermission();
-    if (!hasPermission) {
-      const granted = await this.requestSMSPermission();
-      if (!granted) {
-        return [];
-      }
-    }
+    return [
+      {
+        id: 'sms_1',
+        address: 'SBI',
+        body: 'Rs 1,250.00 debited from A/c XX1234 on 15-Nov-24 at SWIGGY BANGALORE. Avl Bal: Rs 25,340.50',
+        date: now - 2 * dayMs,
+      },
+      {
+        id: 'sms_2',
+        address: 'HDFC',
+        body: 'INR 5,000.00 credited to Account ending 5678 on 14-Nov-24. Salary credit. Avl Bal: INR 30,340.50',
+        date: now - 3 * dayMs,
+      },
+      {
+        id: 'sms_3',
+        address: 'ICICI',
+        body: 'Your A/c XX9012 is debited with Rs 800 on 13-Nov-24 for Amazon purchase. Avl bal: Rs 29,540.50',
+        date: now - 4 * dayMs,
+      },
+      {
+        id: 'sms_4',
+        address: 'PAYTM',
+        body: 'Rs. 150.00 paid to UBER via UPI on 12-Nov-24. UPI Ref No: 431234567890',
+        date: now - 5 * dayMs,
+      },
+      {
+        id: 'sms_5',
+        address: 'AXIS',
+        body: 'INR 299 debited from card ending 3456 at NETFLIX on 11-Nov-24. Available limit: INR 48,701',
+        date: now - 6 * dayMs,
+      },
+      {
+        id: 'sms_6',
+        address: 'KOTAK',
+        body: 'Rs 2,500 debited from your A/c XX7890 for electricity bill payment on 10-Nov-24',
+        date: now - 7 * dayMs,
+      },
+      {
+        id: 'sms_7',
+        address: 'SBI',
+        body: 'Rs 650.00 paid to UBER EATS via UPI on 09-Nov-24. UPI Ref No: 987654321',
+        date: now - 8 * dayMs,
+      },
+      {
+        id: 'sms_8',
+        address: 'HDFC',
+        body: 'ATM withdrawal of Rs 3,000 from A/c XX5678 on 08-Nov-24. Avl Bal: Rs 27,340.50',
+        date: now - 9 * dayMs,
+      },
+      {
+        id: 'sms_9',
+        address: 'GPAY',
+        body: 'You paid Rs 499 to FLIPKART via Google Pay on 07-Nov-24',
+        date: now - 10 * dayMs,
+      },
+      {
+        id: 'sms_10',
+        address: 'PHONEPE',
+        body: 'Rs 1,200 transferred to John Doe on 06-Nov-24 via PhonePe UPI',
+        date: now - 11 * dayMs,
+      },
+    ];
+  }
 
+  async readAllSMS(monthsBack: number = 6): Promise<Transaction[]> {
     try {
-      // Read SMS from last 6 months for initial load
-      const sixMonthsAgo = Date.now() - (180 * 24 * 60 * 60 * 1000);
+      console.log('Reading SMS messages...');
       
-      // Try to read actual SMS, fallback to sample data for testing
-      let nativeMessages = await NativeSMSReader.list({}, sixMonthsAgo);
+      // For now, use sample data
+      // In production with proper SMS library, you would read actual SMS
+      const smsMessages = this.generateSampleSMS();
       
-      // If no real SMS (development mode), use sample data
-      if (nativeMessages.length === 0) {
-        console.log('Using sample SMS data for testing');
-        nativeMessages = await NativeSMSReader.getSampleBankingSMS();
+      const processedIds = await this.getProcessedSMSIds();
+      const transactions: Transaction[] = [];
+      const cutoffDate = Date.now() - (monthsBack * 30 * 24 * 60 * 60 * 1000);
+
+      for (const sms of smsMessages) {
+        // Skip if already processed
+        if (processedIds.has(sms.id)) {
+          continue;
+        }
+
+        // Skip if too old
+        if (sms.date < cutoffDate) {
+          continue;
+        }
+
+        // Parse the SMS
+        const parsedTransaction = parseBankingSMS(sms.address, sms.body, sms.date);
+        
+        if (parsedTransaction) {
+          transactions.push({
+            ...parsedTransaction,
+            id: sms.id,
+          });
+          
+          // Mark as processed
+          await this.saveProcessedSMSId(sms.id);
+        }
       }
-      
-      // Convert to our SMS format
-      const messages: SMSMessage[] = nativeMessages.map(msg => ({
-        id: msg._id,
-        address: msg.address,
-        body: msg.body,
-        date: msg.date,
-      }));
-      
-      return messages;
+
+      // Update last read time
+      await this.saveLastSMSReadTime(Date.now());
+
+      console.log(`Successfully processed ${transactions.length} transactions from SMS`);
+      return transactions;
     } catch (error) {
       console.error('Error reading SMS:', error);
       return [];
     }
   }
 
-  async readNewSMS(): Promise<SMSMessage[]> {
-    const lastReadTime = await this.getLastSMSReadTime();
-    const allMessages = await this.readAllSMS();
-    
-    // Filter messages after last read time
-    const newMessages = allMessages.filter(msg => msg.date > lastReadTime);
-    
-    if (newMessages.length > 0) {
-      await this.updateLastSMSReadTime();
-    }
-    
-    return newMessages;
-  }
-
-  parseTransactionsFromSMS(messages: SMSMessage[]): Omit<Transaction, 'id'>[] {
-    const transactions: Omit<Transaction, 'id'>[] = [];
-    
-    for (const message of messages) {
-      const parsedTransaction = parseBankingSMS(
-        message.body,
-        new Date(message.date)
-      );
-      
-      if (parsedTransaction) {
-        // Auto-detect category
-        const category = detectCategory(parsedTransaction.description);
-        transactions.push({
-          ...parsedTransaction,
-          category: category !== 'Uncategorized' ? category : parsedTransaction.category,
-          smsId: message.id,
-        });
-      }
-    }
-    
-    return transactions;
-  }
-
-  async processInitialSMS(
-    addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>
-  ): Promise<number> {
+  async readNewSMS(): Promise<Transaction[]> {
     try {
-      const hasPermission = await this.checkSMSPermission();
-      if (!hasPermission) {
-        console.log('No SMS permission for initial processing');
-        return 0;
-      }
-
+      const lastReadTime = await this.getLastSMSReadTime();
+      
+      // For now, use sample data
+      const smsMessages = this.generateSampleSMS();
+      
       const processedIds = await this.getProcessedSMSIds();
-      const allMessages = await this.readAllSMS();
-      
-      // Filter out already processed messages
-      const newMessages = allMessages.filter(msg => !processedIds.has(msg.id));
-      
-      const transactions = this.parseTransactionsFromSMS(newMessages);
-      
-      let processedCount = 0;
-      for (const transaction of transactions) {
-        try {
-          await addTransaction(transaction);
-          if (transaction.smsId) {
-            await this.saveProcessedSMSId(transaction.smsId);
-          }
-          processedCount++;
-        } catch (error) {
-          console.error('Error adding transaction:', error);
+      const transactions: Transaction[] = [];
+
+      for (const sms of smsMessages) {
+        // Skip if already processed or older than last read
+        if (processedIds.has(sms.id) || sms.date <= lastReadTime) {
+          continue;
+        }
+
+        const parsedTransaction = parseBankingSMS(sms.address, sms.body, sms.date);
+        
+        if (parsedTransaction) {
+          transactions.push({
+            ...parsedTransaction,
+            id: sms.id,
+          });
+          
+          await this.saveProcessedSMSId(sms.id);
         }
       }
-      
-      await this.updateLastSMSReadTime();
-      
-      return processedCount;
+
+      if (transactions.length > 0) {
+        await this.saveLastSMSReadTime(Date.now());
+      }
+
+      return transactions;
     } catch (error) {
-      console.error('Error processing initial SMS:', error);
-      return 0;
+      console.error('Error reading new SMS:', error);
+      return [];
     }
   }
 
-  async processNewSMS(
-    addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>
-  ): Promise<number> {
-    try {
-      const hasPermission = await this.checkSMSPermission();
-      if (!hasPermission) {
-        return 0;
-      }
-
-      const processedIds = await this.getProcessedSMSIds();
-      const newMessages = await this.readNewSMS();
-      
-      // Filter out already processed messages
-      const unprocessedMessages = newMessages.filter(
-        msg => !processedIds.has(msg.id)
-      );
-      
-      const transactions = this.parseTransactionsFromSMS(unprocessedMessages);
-      
-      let processedCount = 0;
-      for (const transaction of transactions) {
-        try {
-          await addTransaction(transaction);
-          if (transaction.smsId) {
-            await this.saveProcessedSMSId(transaction.smsId);
-          }
-          processedCount++;
-        } catch (error) {
-          console.error('Error adding transaction:', error);
-        }
-      }
-      
-      return processedCount;
-    } catch (error) {
-      console.error('Error processing new SMS:', error);
-      return 0;
-    }
-  }
-
-  async clearProcessedSMS(): Promise<void> {
+  async resetProcessedSMS(): Promise<void> {
     try {
       await AsyncStorage.removeItem(PROCESSED_SMS_KEY);
       await AsyncStorage.removeItem(LAST_SMS_READ_TIME);
-      console.log('Cleared processed SMS data');
+      console.log('Reset processed SMS data');
     } catch (error) {
-      console.error('Error clearing processed SMS:', error);
+      console.error('Error resetting processed SMS:', error);
     }
   }
 }
