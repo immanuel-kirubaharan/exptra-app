@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import MonthSelector from '../../components/MonthSelector';
 import { CATEGORIES, CATEGORY_ICONS } from '../../constants/categories';
 import { colors as themeColors } from '../../constants/theme';
 import { useAccounts } from '../../contexts/AccountContext';
@@ -17,11 +18,13 @@ import { useApp } from '../../contexts/AppContext';
 import { Transaction, useTransactions } from '../../contexts/TransactionContext';
 
 export default function TransactionsScreen() {
-  const { transactions, addTransaction, deleteTransaction, updateTransaction } = useTransactions();
+  const { transactions, addTransaction, deleteTransaction, updateTransaction, getMonthlyTransactions } = useTransactions();
   const { accounts, updateAccountBalance } = useAccounts();
   const { settings } = useApp();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
   const [formData, setFormData] = useState({
     type: 'expense' as 'income' | 'expense',
@@ -30,6 +33,8 @@ export default function TransactionsScreen() {
     accountId: '',
     description: '',
   });
+
+  const monthlyTransactions = getMonthlyTransactions(selectedYear, selectedMonth);
 
   const handleAddTransaction = async () => {
     const amount = parseFloat(formData.amount);
@@ -175,14 +180,23 @@ export default function TransactionsScreen() {
         </TouchableOpacity>
       </View>
 
+      <MonthSelector
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+        onMonthChange={(month, year) => {
+          setSelectedMonth(month);
+          setSelectedYear(year);
+        }}
+      />
+
       <FlatList
-        data={transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())}
+        data={monthlyTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())}
         renderItem={renderTransaction}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No transactions yet</Text>
+            <Text style={styles.emptyText}>No transactions in this month</Text>
             <Text style={styles.emptySubtext}>Tap + Add to create one</Text>
           </View>
         }

@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from 'react-native-paper';
+import MonthSelector from '../../components/MonthSelector';
 import { colors as themeColors } from '../../constants/theme';
 import { useAccounts } from '../../contexts/AccountContext';
 import { Bill, useTransactions } from '../../contexts/TransactionContext';
@@ -22,9 +23,9 @@ export default function BillsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingBill, setEditingBill] = useState<Bill | null>(null);
   const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'overdue'>('all');
-  
-  // Dev-only simulated date for testing month changes
-  const [simDate, setSimDate] = useState<Date | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -56,18 +57,6 @@ export default function BillsScreen() {
   }, []);
 
   const theme = useTheme();
-
-  const today = new Date();
-  const displayDate = simDate || today;
-  const currentMonth = displayDate.getMonth();
-  const currentYear = displayDate.getFullYear();
-
-  const shiftSimMonth = (offset: number) => {
-    setSimDate(prev => {
-      const base = prev || new Date();
-      return new Date(base.getFullYear(), base.getMonth() + offset, 1);
-    });
-  };
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -207,7 +196,7 @@ export default function BillsScreen() {
   const getFilteredBills = (): Bill[] => {
     switch (selectedTab) {
       case 'pending':
-        return getPendingBills(currentYear, currentMonth);
+        return getPendingBills(selectedYear, selectedMonth);
       case 'overdue':
         return getOverdueBills();
       default:
@@ -232,7 +221,7 @@ export default function BillsScreen() {
 
   const renderBill = ({ item }: { item: Bill }) => {
     const isOverdue = item.status === 'overdue';
-    const hasPaidThisMonth = item.payments?.some(p => p.year === currentYear && p.month === currentMonth);
+    const hasPaidThisMonth = item.payments?.some(p => p.year === selectedYear && p.month === selectedMonth);
     const isPaid = item.frequency === 'one-time' ? item.status === 'paid' : !!hasPaidThisMonth;
     
     return (
@@ -299,20 +288,15 @@ export default function BillsScreen() {
           <Text style={styles.addButtonText}>+ Add</Text>
         </TouchableOpacity>
       </View>
-      {__DEV__ && (
-        <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 8}}>
-          <TouchableOpacity onPress={() => shiftSimMonth(-1)} style={{paddingHorizontal:12, paddingVertical:6, backgroundColor:'rgba(255,255,255,0.03)', borderRadius:8}}>
-            <Text style={{color:'#E6EEF8'}}>◀ Prev</Text>
-          </TouchableOpacity>
-          <Text style={{marginHorizontal:12, color:'#9AA4B2'}}>Sim: {currentMonth + 1}/{currentYear}</Text>
-          <TouchableOpacity onPress={() => shiftSimMonth(1)} style={{paddingHorizontal:12, paddingVertical:6, backgroundColor:'rgba(255,255,255,0.03)', borderRadius:8}}>
-            <Text style={{color:'#E6EEF8'}}>Next ▶</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setSimDate(null)} style={{marginLeft:12, paddingHorizontal:8}}>
-            <Text style={{color:'#9AA4B2'}}>Reset</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+
+      <MonthSelector
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+        onMonthChange={(month, year) => {
+          setSelectedMonth(month);
+          setSelectedYear(year);
+        }}
+      />
 
       <View style={styles.tabs}>
         <TouchableOpacity
@@ -328,7 +312,7 @@ export default function BillsScreen() {
           onPress={() => setSelectedTab('pending')}
         >
           <Text style={[styles.tabText, selectedTab === 'pending' && styles.activeTabText]}>
-            Pending ({getPendingBills(currentYear, currentMonth).length})
+            Pending ({getPendingBills(selectedYear, selectedMonth).length})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity

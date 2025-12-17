@@ -10,6 +10,8 @@ import {
   View
 } from 'react-native';
 import { Card, List, Surface, useTheme } from 'react-native-paper';
+import MonthSelector from '../../components/MonthSelector';
+import PieChart from '../../components/PieChart';
 import Speedometer from '../../components/Speedometer';
 import { CATEGORY_ICONS } from '../../constants/categories';
 import { colors as themeColors } from '../../constants/theme';
@@ -17,9 +19,19 @@ import { useAccounts } from '../../contexts/AccountContext';
 import { useApp } from '../../contexts/AppContext';
 import { Transaction, useTransactions } from '../../contexts/TransactionContext';
 
+const CHART_COLORS = [
+  '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
+  '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B88B', '#A3D5A3',
+];
+
+const ACCOUNT_CHART_COLORS = [
+  '#667EEA', '#764BA2', '#F093FB', '#4158D0', '#FF6B6B',
+  '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F',
+];
+
 export default function DashboardScreen() {
   const { settings } = useApp();
-  const { getMonthlyTransactions, getTotalExpense, getTotalIncome, getPendingBills, getOverdueBills } = useTransactions();
+  const { getMonthlyTransactions, getTotalExpense, getTotalIncome, getPendingBills, getOverdueBills, getCategoryWiseExpense, getAccountWiseData } = useTransactions();
   const { getTotalBalance } = useAccounts();
   const router = useRouter();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -40,37 +52,18 @@ export default function DashboardScreen() {
   
   const pendingBills = getPendingBills(selectedYear, selectedMonth);
   const overdueBills = getOverdueBills();
-  // Calculate total only for unpaid overdue bills and unpaid EMIs, avoiding double-counting
-  const totalPendingAmount = (() => {
-    const unique = new Map<any, any>();
-
-    const isPaid = (bill: any) => {
-      if (!bill) return false;
-      if (typeof bill.paid === 'boolean') return bill.paid === true;
-      if (typeof bill.status === 'string') return bill.status.toLowerCase() === 'paid';
-      return false;
-    };
-
-    // Add unpaid overdue bills
-    (overdueBills || []).forEach((bill: any) => {
-      if (bill && !isPaid(bill)) {
-        const key = bill && 'id' in bill && bill.id != null ? bill.id : JSON.stringify(bill);
-        if (!unique.has(key)) unique.set(key, bill);
-      }
-    });
-
-    // Add unpaid EMIs from pending bills
-    (pendingBills || []).forEach((bill: any) => {
-      const isEmi = bill && (bill.type === 'emi' || bill.isEmi === true || (typeof bill.category === 'string' && bill.category.toLowerCase() === 'emi'));
-      if (isEmi && !isPaid(bill)) {
-        const key = bill && 'id' in bill && bill.id != null ? bill.id : JSON.stringify(bill);
-        if (!unique.has(key)) unique.set(key, bill);
-      }
-    });
-
-    return Array.from(unique.values()).reduce((sum: number, bill: any) => sum + (bill.amount ?? 0), 0);
-  })();
+  
+  // Calculate pending bills for selected month (not just current month)
+  const totalPendingAmount = pendingBills.reduce((sum, bill) => {
+    const hasPaidThisMonth = bill.payments?.some(p => p.year === selectedYear && p.month === selectedMonth);
+    return hasPaidThisMonth ? sum : sum + bill.amount;
+  }, 0);
+  
   const bankBalance = getTotalBalance();
+  
+  // Get category-wise and account-wise spending data for charts
+  const categoryWiseExpense = getCategoryWiseExpense(selectedYear, selectedMonth);
+  const accountWiseData = getAccountWiseData(selectedYear, selectedMonth);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -125,9 +118,18 @@ export default function DashboardScreen() {
         <Text style={[styles.subtitle, { color: themeColors.background }]}>Here's your expense overview</Text>
       </Surface>
 
+      <MonthSelector
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+        onMonthChange={(month, year) => {
+          setSelectedMonth(month);
+          setSelectedYear(year);
+        }}
+      />
+
       <Animated.View style={[styles.speedometerContainer, { transform: [{ scale: fadeAnim.interpolate({ inputRange: [0,1], outputRange: [0.98,1] }) }] }] }>
         <Text style={[styles.sectionTitle, { color: themeColors.text }]}>
-          {new Date(selectedYear, selectedMonth).toLocaleString(undefined, { month: 'long', year: 'numeric' })}
+          Overview
         </Text>
         <Card style={{ backgroundColor: themeColors.surface, width: '100%', elevation: 3 }}>
           <Card.Content style={{ alignItems: 'center' }}>
@@ -167,6 +169,7 @@ export default function DashboardScreen() {
         </Card>
       </View>
 
+      {/* Recent Transactions */}
       <View style={styles.transactionsSection}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Transactions</Text>
@@ -210,6 +213,38 @@ export default function DashboardScreen() {
           />
         )}
       </View>
+
+      {/* Category-wise Spending Chart */}
+      {Object.keys(categoryWiseExpense).length > 0 && (
+        <View style={styles.chartsContainer}>
+          <PieChart
+            title="Spending by Category"
+            data={Object.entries(categoryWiseExpense).map(([category, amount], index) => ({
+              label: category,
+              value: amount,
+              color: CHART_COLORS[index % CHART_COLORS.length],
+            }))}
+            size={240}
+            strokeWidth={18}
+          />
+        </View>
+      )}
+
+      {/* Account-wise Spending Chart */}
+      {Object.keys(accountWiseData).length > 0 && (
+        <View style={styles.chartsContainer}>
+          <PieChart
+            title="Spending by Account"
+            data={Object.entries(accountWiseData).map(([account, data], index) => ({
+              label: account,
+              value: data.expense,
+              color: ACCOUNT_CHART_COLORS[index % ACCOUNT_CHART_COLORS.length],
+            }))}
+            size={240}
+            strokeWidth={18}
+          />
+        </View>
+      )}
     </Animated.ScrollView>
   );
 }
@@ -273,6 +308,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: themeColors.text,
+  },
+  chartsContainer: {
+    paddingHorizontal: 15,
+    marginBottom: 15,
   },
   statHint: {
     fontSize: 10,
