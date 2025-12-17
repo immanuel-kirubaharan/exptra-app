@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
+import { colors } from '../constants/theme';
 
 interface SpeedometerProps {
   value: number;
@@ -8,8 +9,9 @@ interface SpeedometerProps {
   size?: number;
 }
 
-export default function Speedometer({ value, maxValue, size = 400 }: SpeedometerProps) {
-  const percentage = Math.min(Math.max((value / maxValue) * 100, 0), 100);
+export default function Speedometer({ value, maxValue, size = 300 }: SpeedometerProps) {
+  // const { colors } = useTheme();
+  const percentage = Math.min(Math.max((value / Math.max(maxValue, 1)) * 100, 0), 100);
   const angle = (percentage / 100) * 180;
   
   const radius = size * 0.35;
@@ -28,9 +30,9 @@ export default function Speedometer({ value, maxValue, size = 400 }: Speedometer
   const needleY = centerY + needleLength * Math.sin(needleAngle);
   
   const getColor = () => {
-    if (percentage < 50) return '#4CAF50';
-    if (percentage < 80) return '#FF9800';
-    return '#F44336';
+    if (percentage < 50) return colors.success || '#10B981';
+    if (percentage < 80) return colors.accent || '#FBBD23';
+    return colors.error || '#FB7185';
   };
 
   return (
@@ -39,7 +41,7 @@ export default function Speedometer({ value, maxValue, size = 400 }: Speedometer
         <Path
           d={backgroundArc}
           fill="none"
-          stroke="#E0E0E0"
+          stroke={colors.onSurfaceVariant || '#374151'}
           strokeWidth={size * 0.08}
           strokeLinecap="round"
         />
@@ -54,7 +56,7 @@ export default function Speedometer({ value, maxValue, size = 400 }: Speedometer
         
         <Path
           d={`M ${centerX} ${centerY} L ${needleX} ${needleY}`}
-          stroke="#333"
+          stroke={'#3a506b'}
           strokeWidth={size * 0.01}
           strokeLinecap="round"
         />
@@ -63,25 +65,25 @@ export default function Speedometer({ value, maxValue, size = 400 }: Speedometer
           cx={centerX}
           cy={centerY}
           r={size * 0.04}
-          fill="#333"
+          fill={'#3a506b'}
         />
         
         <SvgText
           x={centerX}
           y={centerY + radius * 0.6}
           fontSize={size * 0.12}
-          fill="#333"
+          fill={colors.text}
           textAnchor="middle"
-          fontWeight="bold"
+          fontWeight="700"
         >
           ₹{value.toLocaleString()}
         </SvgText>
         
         <SvgText
           x={centerX}
-          y={centerY + radius * 0.8}
-          fontSize={size * 0.08}
-          fill="#666"
+          y={centerY + radius * 0.85}
+          fontSize={size * 0.07}
+          fill={colors.onSurfaceVariant}
           textAnchor="middle"
         >
           of ₹{maxValue.toLocaleString()}

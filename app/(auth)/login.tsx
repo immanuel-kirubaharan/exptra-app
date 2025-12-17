@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { colors as themeColors } from '../../constants/theme';
 import { deleteToken, getToken, isTrueString, saveToken, useAuth } from '../../contexts/AuthContext';
 
 export default function LoginScreen() {
@@ -173,7 +174,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: themeColors.background,
   },
   content: {
     flex: 1,
@@ -188,30 +189,27 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    shadowColor: '#2196F3',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
     elevation: 8,
   },
   logoText: {
     fontSize: 40,
+    color: themeColors.background,
   },
   title: {
     fontSize: 36,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
-    color: '#2196F3',
+    color: themeColors.primary,
   },
   subtitle: {
     fontSize: 16,
     textAlign: 'center',
-    color: '#666',
+    color: themeColors.muted,
   },
   formContainer: {
     width: '100%',
@@ -222,43 +220,40 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: themeColors.text,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.surface,
     padding: 16,
     borderRadius: 12,
     fontSize: 16,
     borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderColor: 'rgba(255,255,255,0.03)',
+    color: themeColors.text,
   },
   inputError: {
-    borderColor: '#F44336',
+    borderColor: themeColors.danger,
   },
   errorText: {
-    color: '#F44336',
+    color: themeColors.danger,
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
   },
   button: {
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.primary,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 12,
-    shadowColor: '#2196F3',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
     elevation: 4,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
-    color: '#fff',
+    color: themeColors.background,
     fontSize: 18,
     fontWeight: '700',
   },
@@ -267,7 +262,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   switchText: {
-    color: '#2196F3',
+    color: themeColors.primary,
     fontSize: 15,
     fontWeight: '500',
   },

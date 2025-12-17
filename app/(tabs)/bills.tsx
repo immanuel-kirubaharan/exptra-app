@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  Animated,
   FlatList,
   Modal,
   ScrollView,
@@ -10,6 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTheme } from 'react-native-paper';
+import { colors as themeColors } from '../../constants/theme';
 import { useAccounts } from '../../contexts/AccountContext';
 import { Bill, useTransactions } from '../../contexts/TransactionContext';
 
@@ -52,6 +55,8 @@ export default function BillsScreen() {
     };
   }, []);
 
+  const theme = useTheme();
+
   const today = new Date();
   const displayDate = simDate || today;
   const currentMonth = displayDate.getMonth();
@@ -63,6 +68,12 @@ export default function BillsScreen() {
       return new Date(base.getFullYear(), base.getMonth() + offset, 1);
     });
   };
+
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+  }, [fadeAnim]);
 
   const resetForm = () => {
     setFormData({
@@ -281,7 +292,7 @@ export default function BillsScreen() {
   const filteredBills = getFilteredBills();
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }] }>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Bills & EMI</Text>
         <TouchableOpacity style={styles.addButton} onPress={openAddModal}>
@@ -290,15 +301,15 @@ export default function BillsScreen() {
       </View>
       {__DEV__ && (
         <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 8}}>
-          <TouchableOpacity onPress={() => shiftSimMonth(-1)} style={{paddingHorizontal:12, paddingVertical:6, backgroundColor:'#eee', borderRadius:8}}>
-            <Text>◀ Prev</Text>
+          <TouchableOpacity onPress={() => shiftSimMonth(-1)} style={{paddingHorizontal:12, paddingVertical:6, backgroundColor:'rgba(255,255,255,0.03)', borderRadius:8}}>
+            <Text style={{color:'#E6EEF8'}}>◀ Prev</Text>
           </TouchableOpacity>
-          <Text style={{marginHorizontal:12}}>Sim: {currentMonth + 1}/{currentYear}</Text>
-          <TouchableOpacity onPress={() => shiftSimMonth(1)} style={{paddingHorizontal:12, paddingVertical:6, backgroundColor:'#eee', borderRadius:8}}>
-            <Text>Next ▶</Text>
+          <Text style={{marginHorizontal:12, color:'#9AA4B2'}}>Sim: {currentMonth + 1}/{currentYear}</Text>
+          <TouchableOpacity onPress={() => shiftSimMonth(1)} style={{paddingHorizontal:12, paddingVertical:6, backgroundColor:'rgba(255,255,255,0.03)', borderRadius:8}}>
+            <Text style={{color:'#E6EEF8'}}>Next ▶</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setSimDate(null)} style={{marginLeft:12, paddingHorizontal:8}}>
-            <Text>Reset</Text>
+            <Text style={{color:'#9AA4B2'}}>Reset</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -478,21 +489,21 @@ export default function BillsScreen() {
       {/* Account selector modal for choosing which account to debit */}
       <Modal visible={accountModalVisible} animationType="slide" transparent={true} onRequestClose={() => setAccountModalVisible(false)}>
         <View style={{flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'rgba(0,0,0,0.4)'}}>
-          <View style={{width:'90%', backgroundColor:'#fff', borderRadius:12, padding:16}}>
-            <Text style={{fontSize:18, fontWeight:'600', marginBottom:12}}>Select account to debit</Text>
+          <View style={{width:'90%', backgroundColor: themeColors.surface, borderRadius:12, padding:16}}>
+            <Text style={{fontSize:18, fontWeight:'600', marginBottom:12, color: themeColors.text}}>Select account to debit</Text>
             <ScrollView style={{maxHeight:240}}>
               {accounts.map(acc => (
-                <TouchableOpacity key={acc.id} onPress={() => setChosenAccountId(acc.id)} style={{padding:12, borderRadius:8, backgroundColor: chosenAccountId === acc.id ? '#E3F2FD' : 'transparent', marginBottom:8}}>
-                  <Text style={{fontSize:16}}>{acc.name} ({acc.type}) - ₹{acc.balance.toLocaleString()}</Text>
+                <TouchableOpacity key={acc.id} onPress={() => setChosenAccountId(acc.id)} style={{padding:12, borderRadius:8, backgroundColor: chosenAccountId === acc.id ? themeColors.primary : 'transparent', marginBottom:8}}>
+                  <Text style={{fontSize:16, color: chosenAccountId === acc.id ? themeColors.background : themeColors.text}}>{acc.name} ({acc.type}) - ₹{acc.balance.toLocaleString()}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
             <View style={{flexDirection:'row', justifyContent:'flex-end', marginTop:12}}>
               <TouchableOpacity onPress={() => setAccountModalVisible(false)} style={{padding:10, marginRight:12}}>
-                <Text>Cancel</Text>
+                <Text style={{color: themeColors.text}}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={confirmMarkAsPaid} style={{padding:10, backgroundColor:'#2196F3', borderRadius:8}}>
-                <Text style={{color:'#fff'}}>Confirm</Text>
+              <TouchableOpacity onPress={confirmMarkAsPaid} style={{padding:10, backgroundColor:themeColors.primary, borderRadius:8}}>
+                <Text style={{color:themeColors.background}}>Confirm</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -501,8 +512,8 @@ export default function BillsScreen() {
 
       {/* Undo banner */}
       {undoVisible && undoInfo && (
-        <View style={{position:'absolute', left:16, right:16, bottom:24, backgroundColor:'#fff', padding:12, borderRadius:8, elevation:4, flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}>
-          <Text>Marked paid — <Text style={{fontWeight:'600'}}>₹{undoInfo.amount.toLocaleString()}</Text> from account</Text>
+        <View style={{position:'absolute', left:16, right:16, bottom:24, backgroundColor:themeColors.surface, padding:12, borderRadius:8, elevation:4, flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}>
+          <Text style={{color: themeColors.text}}>Marked paid — <Text style={{fontWeight:'600', color: themeColors.text}}>₹{undoInfo.amount.toLocaleString()}</Text> from account</Text>
           <View style={{flexDirection:'row'}}>
             <TouchableOpacity onPress={async () => {
               try {
@@ -515,49 +526,49 @@ export default function BillsScreen() {
                 if (undoTimeoutRef.current) { clearTimeout(undoTimeoutRef.current as unknown as number); undoTimeoutRef.current = null; }
               }
             }} style={{paddingHorizontal:12, paddingVertical:6}}>
-              <Text style={{color:'#2196F3', fontWeight:'600'}}>Undo</Text>
+              <Text style={{color:themeColors.primary, fontWeight:'600'}}>Undo</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => { setUndoVisible(false); setUndoInfo(null); if (undoTimeoutRef.current) { clearTimeout(undoTimeoutRef.current as unknown as number); undoTimeoutRef.current = null; }}} style={{paddingHorizontal:12, paddingVertical:6}}>
-              <Text style={{color:'#666'}}>Dismiss</Text>
+              <Text style={{color:themeColors.muted}}>Dismiss</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.primary,
     paddingTop: 60,
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: themeColors.background,
   },
   addButton: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.background,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
   },
   addButtonText: {
-    color: '#2196F3',
+    color: themeColors.primary,
     fontWeight: '600',
   },
   tabs: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.surface,
     padding: 10,
     gap: 10,
   },
@@ -566,40 +577,39 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.card,
     alignItems: 'center',
   },
   activeTab: {
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.primary,
   },
   tabText: {
     fontSize: 14,
-    color: '#666',
+    color: themeColors.muted,
     fontWeight: '600',
   },
   activeTabText: {
-    color: '#fff',
+    color: themeColors.background,
   },
   listContent: {
     padding: 15,
   },
   billCard: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    backgroundColor: themeColors.card,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.03)'
   },
   overdueBillCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#F44336',
+    borderLeftColor: themeColors.danger,
   },
   paidBillCard: {
-    opacity: 0.6,
+    opacity: 0.7,
+    backgroundColor: themeColors.surface
   },
   billHeader: {
     flexDirection: 'row',
@@ -609,31 +619,31 @@ const styles = StyleSheet.create({
   billIcon: {
     width: 50,
     height: 50,
-    borderRadius: 25,
-    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.03)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   billIconText: {
-    fontSize: 24,
+    fontSize: 20,
   },
   billInfo: {
     flex: 1,
   },
   billName: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: '700',
+    color: themeColors.text,
   },
   billCategory: {
     fontSize: 12,
-    color: '#666',
+    color: themeColors.muted,
     marginTop: 2,
   },
   emiInfo: {
     fontSize: 11,
-    color: '#2196F3',
+    color: themeColors.primary,
     marginTop: 2,
   },
   billAmount: {
@@ -641,12 +651,12 @@ const styles = StyleSheet.create({
   },
   billAmountText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#F44336',
+    fontWeight: '800',
+    color: themeColors.danger,
   },
   billFrequency: {
     fontSize: 11,
-    color: '#999',
+    color: themeColors.muted,
     marginTop: 2,
   },
   billFooter: {
@@ -654,7 +664,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: 'rgba(255,255,255,0.03)',
     paddingTop: 12,
   },
   billDates: {
@@ -662,34 +672,34 @@ const styles = StyleSheet.create({
   },
   billDate: {
     fontSize: 12,
-    color: '#666',
+    color: themeColors.muted,
   },
   billReminder: {
     fontSize: 11,
-    color: '#999',
+    color: themeColors.muted,
     marginTop: 2,
   },
   payButton: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 20,
+    backgroundColor: themeColors.accent,
+    paddingHorizontal: 18,
     paddingVertical: 8,
-    borderRadius: 15,
+    borderRadius: 12,
   },
   payButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
+    color: themeColors.background,
+    fontSize: 13,
+    fontWeight: '700',
   },
   paidBadge: {
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 15,
+    backgroundColor: 'rgba(16,185,129,0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
   paidBadgeText: {
-    color: '#4CAF50',
+    color: themeColors.success,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   emptyState: {
     alignItems: 'center',
@@ -697,19 +707,20 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: themeColors.muted,
     marginBottom: 20,
+    fontWeight: '700',
   },
   emptyButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.accent,
     paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 25,
+    paddingVertical: 12,
+    borderRadius: 20,
   },
   emptyButtonText: {
-    color: '#fff',
+    color: themeColors.background,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   modalOverlay: {
     flex: 1,
@@ -717,7 +728,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -727,22 +738,22 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-    color: '#333',
+    color: themeColors.text,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: themeColors.text,
     marginBottom: 8,
     marginTop: 12,
   },
   input: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.card,
     borderRadius: 10,
     padding: 15,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: 'rgba(255,255,255,0.03)',
   },
   categorySelector: {
     flexDirection: 'row',
@@ -750,20 +761,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryButton: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.card,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 15,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: 'rgba(255,255,255,0.03)',
   },
   categoryButtonActive: {
-    backgroundColor: '#E3F2FD',
-    borderColor: '#2196F3',
+    backgroundColor: themeColors.primary,
+    borderColor: themeColors.primary,
   },
   categoryButtonText: {
     fontSize: 12,
-    color: '#666',
+    color: themeColors.muted,
   },
   frequencySelector: {
     flexDirection: 'row',
@@ -773,7 +784,7 @@ const styles = StyleSheet.create({
   frequencyButton: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.card,
     padding: 12,
     borderRadius: 10,
     alignItems: 'center',
@@ -781,13 +792,13 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   frequencyButtonActive: {
-    backgroundColor: '#E3F2FD',
-    borderColor: '#2196F3',
+    backgroundColor: themeColors.primary,
+    borderColor: themeColors.primary,
   },
   frequencyButtonText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#666',
+    color: themeColors.muted,
   },
   emiToggle: {
     marginVertical: 15,
@@ -798,7 +809,7 @@ const styles = StyleSheet.create({
   },
   checkboxText: {
     fontSize: 16,
-    color: '#333',
+    color: themeColors.text,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -812,17 +823,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.card,
   },
   cancelButtonText: {
-    color: '#666',
+    color: themeColors.muted,
     fontWeight: '600',
   },
   saveButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.primary,
   },
   saveButtonText: {
-    color: '#fff',
+    color: themeColors.background,
     fontWeight: '600',
   },
 });

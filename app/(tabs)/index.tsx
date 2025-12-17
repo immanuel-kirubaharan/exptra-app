@@ -1,16 +1,18 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   FlatList,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
+import { Card, List, Surface, useTheme } from 'react-native-paper';
 import Speedometer from '../../components/Speedometer';
 import { CATEGORY_ICONS } from '../../constants/categories';
+import { colors as themeColors } from '../../constants/theme';
 import { useAccounts } from '../../contexts/AccountContext';
 import { useApp } from '../../contexts/AppContext';
 import { Transaction, useTransactions } from '../../contexts/TransactionContext';
@@ -25,6 +27,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [transactionFilter, setTransactionFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [showAmounts, setShowAmounts] = useState(true);
+  const theme = useTheme();
 
   const monthlyTransactions = getMonthlyTransactions(selectedYear, selectedMonth);
   const filteredTransactions = monthlyTransactions.filter(t => {
@@ -74,6 +77,12 @@ export default function DashboardScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   };
 
+  // simple fade-in animation for main content
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+  }, [fadeAnim]);
+
   const getRemainingDaysInMonth = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -85,74 +94,77 @@ export default function DashboardScreen() {
   };
 
   const renderTransaction = ({ item }: { item: Transaction }) => (
-    <View style={styles.transactionItem}>
-      <View style={styles.transactionIcon}>
-        <Text style={styles.iconText}>{CATEGORY_ICONS[item.category] || '💰'}</Text>
-      </View>
-      <View style={styles.transactionDetails}>
-        <Text style={styles.transactionCategory}>{item.category}</Text>
-        <Text style={styles.transactionAccount}>
-          {item.accountName || item.bankName}
-        </Text>
-        <Text style={styles.transactionDate}>
-          {new Date(item.date).toLocaleDateString()}
-        </Text>
-      </View>
-      <Text style={[
-        styles.transactionAmount,
-        item.type === 'income' ? styles.incomeAmount : styles.expenseAmount
-      ]}>
-        {item.type === 'income' ? '+' : '-'}₹{item.amount.toLocaleString()}
-      </Text>
-    </View>
+    <List.Item
+      title={item.category}
+      description={`${item.accountName || item.bankName} • ${new Date(item.date).toLocaleDateString()}`}
+      left={props => 
+        (
+          <View style={styles.transactionIcon}>
+            <Text style={styles.iconText}>{CATEGORY_ICONS[item.category] || '📄'}</Text>
+          </View>
+        )
+      }
+      right={() => (
+        <Text style={[styles.transactionAmount, item.type === 'income' ? styles.incomeAmount : styles.expenseAmount]}>{item.type === 'income' ? '+' : '-'}₹{item.amount.toLocaleString()}</Text>
+      )}
+      style={{backgroundColor: themeColors.surface}}
+      titleStyle={{color: themeColors.text, fontWeight: '700'}}
+      descriptionStyle={{color: themeColors.onSurfaceVariant}}
+    />
   );
 
   return (
-    <ScrollView 
-      style={styles.container}
+    <Animated.ScrollView 
+      style={[styles.container, { opacity: fadeAnim }]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <View style={styles.header}>
-        <Text style={styles.greeting}>Hello, {settings.nickname || 'User'}</Text>
-        <Text style={styles.subtitle}>Here's your expense overview</Text>
-      </View>
+      <Surface style={[styles.header, { backgroundColor: themeColors.primary }] }>
+        <Text style={[styles.greeting, { color: themeColors.background }]}>Hello, {settings.nickname || 'User'}</Text>
+        <Text style={[styles.subtitle, { color: themeColors.background }]}>Here's your expense overview</Text>
+      </Surface>
 
-      <View style={styles.speedometerContainer}>
-        <Text style={styles.sectionTitle}>
+      <Animated.View style={[styles.speedometerContainer, { transform: [{ scale: fadeAnim.interpolate({ inputRange: [0,1], outputRange: [0.98,1] }) }] }] }>
+        <Text style={[styles.sectionTitle, { color: themeColors.text }]}>
           {new Date(selectedYear, selectedMonth).toLocaleString(undefined, { month: 'long', year: 'numeric' })}
         </Text>
-        <Speedometer value={totalExpense} maxValue={settings.monthlyBudget || 1} />
-        <Text style={styles.remainingText}>
-          {remainingBudget <= 0 ? 'Budget exceeded' : `Safe to spend ₹${remainingBudget.toLocaleString()}`} | {getRemainingDaysInMonth()} days left
-        </Text>
-      </View>
+        <Card style={{ backgroundColor: themeColors.surface, width: '100%', elevation: 3 }}>
+          <Card.Content style={{ alignItems: 'center' }}>
+            <Speedometer value={totalExpense} maxValue={settings.monthlyBudget || 1} />
+            <Text style={[styles.remainingText, { color: themeColors.onSurfaceVariant }]}>
+              {remainingBudget <= 0 ? 'Budget exceeded' : `Safe to spend ₹${remainingBudget.toLocaleString()}`} | {getRemainingDaysInMonth()} days left
+            </Text>
+          </Card.Content>
+        </Card>
+      </Animated.View>
 
       <View style={styles.statsContainer}>
-        <TouchableOpacity 
-          style={styles.statCard}
-          onPress={() => router.push('/accounts' as any)}
-        >
-          <Text style={styles.statLabel}>Bank Balance</Text>
-          <TouchableOpacity onPress={() => setShowAmounts(!showAmounts)} >
-              {showAmounts ? <Text style={styles.statValue}>₹ *** ***</Text> : <Text style={styles.statValue}>₹ {bankBalance.toLocaleString()}</Text>}
-          </TouchableOpacity>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.statCard}
-          onPress={() => router.push('/bills' as any)}
-        >
-          <Text style={styles.statLabel}>Pending Bills</Text>
-          <Text style={styles.statValue}>₹{totalPendingAmount.toLocaleString()}</Text>
-          {overdueBills.length > 0 && (
-            <Text style={styles.overdueHint}>{overdueBills.length} overdue</Text>
-          )}
-        </TouchableOpacity>
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>Total Spent</Text>
-          <Text style={styles.statValue}>₹{totalExpense.toLocaleString()}</Text>
-        </View>
+        <Card style={[styles.statCard, { backgroundColor: themeColors.surface }]} onPress={() => router.push('/accounts' as any)}>
+          <Card.Content>
+            <Text style={[styles.statLabel, { color: themeColors.onSurfaceVariant }]}>Bank Balance</Text>
+            <TouchableOpacity onPress={() => setShowAmounts(!showAmounts)}>
+              {showAmounts ? <Text style={[styles.statValue, { color: themeColors.text }]}>₹ *** ***</Text> : <Text style={[styles.statValue, { color: themeColors.text }]}>₹ {bankBalance.toLocaleString()}</Text>}
+            </TouchableOpacity>
+          </Card.Content>
+        </Card>
+
+        <Card style={[styles.statCard, { backgroundColor: themeColors.surface }]} onPress={() => router.push('/bills' as any)}>
+          <Card.Content>
+            <Text style={[styles.statLabel, { color: themeColors.onSurfaceVariant }]}>Pending Bills</Text>
+            <Text style={[styles.statValue, { color: themeColors.text }]}>₹{totalPendingAmount.toLocaleString()}</Text>
+            {overdueBills.length > 0 && (
+              <Text style={styles.overdueHint}>{overdueBills.length} overdue</Text>
+            )}
+          </Card.Content>
+        </Card>
+
+        <Card style={[styles.statCard, { backgroundColor: themeColors.surface }]}>
+          <Card.Content>
+            <Text style={[styles.statLabel, { color: themeColors.onSurfaceVariant }]}>Total Spent</Text>
+            <Text style={[styles.statValue, { color: themeColors.text }]}>₹{totalExpense.toLocaleString()}</Text>
+          </Card.Content>
+        </Card>
       </View>
 
       <View style={styles.transactionsSection}>
@@ -198,99 +210,87 @@ export default function DashboardScreen() {
           />
         )}
       </View>
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.background,
   },
   header: {
     padding: 20,
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.primary,
     paddingTop: 60,
   },
   greeting: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: themeColors.background,
     marginBottom: 5,
   },
   subtitle: {
     fontSize: 16,
-    color: '#E3F2FD',
+    color: themeColors.background,
   },
   speedometerContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.surface,
     margin: 15,
     padding: 15,
     borderRadius: 15,
     alignItems: 'center',
     elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: themeColors.text,
   },
   remainingText: {
     fontSize: 16,
-    color: '#666',
+    color: themeColors.muted,
   },
   statsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 15,
-    gap: 10,
-    marginBottom: 15,
+    gap: 8,
+    marginBottom: 5,
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#fff',
-    padding: 15,
+    backgroundColor: themeColors.surface,
+    padding: 3,
     borderRadius: 10,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
+    color: themeColors.muted,
     marginBottom: 5,
   },
   statValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: themeColors.text,
   },
   statHint: {
     fontSize: 10,
-    color: '#999',
+    color: themeColors.muted,
     marginTop: 3,
   },
   overdueHint: {
     fontSize: 10,
-    color: '#F44336',
+    color: themeColors.danger,
     marginTop: 3,
     fontWeight: '600',
   },
   transactionsSection: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.surface,
     margin: 15,
     padding: 15,
     borderRadius: 15,
     elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   viewAll: {
-    color: '#2196F3',
+    color: themeColors.primary,
     fontSize: 14,
   },
   transactionTabs: {
@@ -311,18 +311,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.surface,
   },
   activeTab: {
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.primary,
   },
   tabText: {
     fontSize: 14,
-    color: '#666',
+    color: themeColors.muted,
     fontWeight: '500',
   },
   activeTabText: {
-    color: '#fff',
+    color: themeColors.background,
     fontWeight: '600',
   },
   transactionItem: {
@@ -330,13 +330,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: 'rgba(255,255,255,0.03)',
   },
+  // transactionIcon: {
+  //   width: 50,
+  //   height: 50,
+  //   borderRadius: 12,
+  //   backgroundColor: 'rgba(255,255,255,0.03)',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   marginRight: 12,
+  //   shadowColor: '#000',
+  //   elevation: 2,
+  // },
+  // iconText: {
+  //   fontSize: 20,
+  // },
   transactionIcon: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.card,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -349,28 +363,28 @@ const styles = StyleSheet.create({
   },
   transactionCategory: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: '700',
+    color: themeColors.text,
   },
   transactionAccount: {
     fontSize: 12,
-    color: '#666',
+    color: themeColors.muted,
     marginTop: 2,
   },
   transactionDate: {
     fontSize: 11,
-    color: '#999',
+    color: themeColors.muted,
     marginTop: 2,
   },
   transactionAmount: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   incomeAmount: {
-    color: '#4CAF50',
+    color: '#34D399',
   },
   expenseAmount: {
-    color: '#F44336',
+    color: '#FB7185',
   },
   emptyState: {
     alignItems: 'center',
@@ -378,12 +392,12 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: themeColors.muted,
     fontWeight: '600',
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
+    color: themeColors.muted,
     marginTop: 5,
   },
 });

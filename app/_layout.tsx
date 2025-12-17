@@ -3,7 +3,10 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { View } from 'react-native';
+import { Provider as PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
+import { paperTheme } from '../constants/theme';
 import { AccountProvider } from '../contexts/AccountContext';
 import { AppProvider, useApp } from '../contexts/AppContext';
 import { AuthProvider, getToken, isTrueString, useAuth } from '../contexts/AuthContext';
@@ -49,12 +52,14 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
+      <View style={{flex:1, backgroundColor: paperTheme.colors.background}}>
+        <Stack>
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        </Stack>
+        <StatusBar style="light" />
+      </View>
     </ThemeProvider>
   );
 }
@@ -63,11 +68,13 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <AppProvider>
-        <AccountProvider>
-          <TransactionProvider>
-            <RootLayoutNav />
-          </TransactionProvider>
-        </AccountProvider>
+        <PaperProvider theme={paperTheme}>
+          <AccountProvider>
+            <TransactionProvider>
+              <RootLayoutNav />
+            </TransactionProvider>
+          </AccountProvider>
+        </PaperProvider>
       </AppProvider>
     </AuthProvider>
   );

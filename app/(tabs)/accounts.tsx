@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { colors as themeColors } from '../../constants/theme';
 import { Account, useAccounts } from '../../contexts/AccountContext';
 import { useTransactions } from '../../contexts/TransactionContext';
 
@@ -309,67 +310,59 @@ export default function AccountsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.primary,
     paddingTop: 60,
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: themeColors.background,
   },
   addButton: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.background,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
   },
   addButtonText: {
-    color: '#2196F3',
+    color: themeColors.primary,
     fontWeight: '600',
   },
   totalCard: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.surface,
     margin: 15,
     padding: 20,
     borderRadius: 15,
     alignItems: 'center',
     elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   totalLabel: {
     fontSize: 16,
-    color: '#666',
+    color: themeColors.muted,
     marginBottom: 8,
   },
   totalValue: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#2196F3',
+    color: themeColors.primary,
   },
   listContent: {
     paddingHorizontal: 15,
     paddingBottom: 20,
   },
   accountCard: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.surface,
     borderRadius: 15,
     padding: 15,
     marginBottom: 15,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
   accountHeader: {
     flexDirection: 'row',
@@ -380,7 +373,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.card,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -394,27 +387,27 @@ const styles = StyleSheet.create({
   accountName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: themeColors.text,
   },
   accountNumber: {
     fontSize: 12,
-    color: '#666',
+    color: themeColors.muted,
     marginTop: 2,
   },
   bankName: {
     fontSize: 11,
-    color: '#999',
+    color: themeColors.muted,
     marginTop: 2,
   },
   accountBalance: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2196F3',
+    color: themeColors.primary,
   },
   accountStats: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: 'rgba(255,255,255,0.03)',
     paddingTop: 12,
     marginBottom: 12,
   },
@@ -423,12 +416,13 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
+    color: themeColors.muted,
     marginBottom: 4,
   },
   statValue: {
     fontSize: 16,
     fontWeight: '600',
+    color: themeColors.text,
   },
   incomeText: {
     color: '#4CAF50',
@@ -440,32 +434,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: 'rgba(255,255,255,0.03)',
     paddingTop: 12,
   },
   editButton: {
     flex: 1,
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.primary,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
   editButtonText: {
-    color: '#fff',
+    color: themeColors.background,
     fontSize: 13,
     fontWeight: '600',
   },
   deleteButton: {
     flex: 1,
-    backgroundColor: '#F44336',
+    backgroundColor: themeColors.danger,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
   deleteButtonText: {
-    color: '#fff',
+    color: themeColors.background,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -475,17 +469,17 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: themeColors.muted,
     marginBottom: 20,
   },
   emptyButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.primary,
     paddingHorizontal: 30,
     paddingVertical: 15,
     borderRadius: 25,
   },
   emptyButtonText: {
-    color: '#fff',
+    color: themeColors.background,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -495,7 +489,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -505,22 +499,22 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-    color: '#333',
+    color: themeColors.text,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: themeColors.text,
     marginBottom: 8,
     marginTop: 12,
   },
   input: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.card,
     borderRadius: 10,
     padding: 15,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: 'rgba(255,255,255,0.03)',
   },
   typeSelector: {
     flexDirection: 'row',
@@ -531,7 +525,7 @@ const styles = StyleSheet.create({
   typeButton: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.card,
     padding: 12,
     borderRadius: 10,
     alignItems: 'center',
@@ -539,13 +533,13 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   typeButtonActive: {
-    backgroundColor: '#E3F2FD',
-    borderColor: '#2196F3',
+    backgroundColor: themeColors.primary,
+    borderColor: themeColors.primary,
   },
   typeButtonText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#666',
+    color: themeColors.muted,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -559,17 +553,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.card,
   },
   cancelButtonText: {
-    color: '#666',
+    color: themeColors.muted,
     fontWeight: '600',
   },
   saveButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.primary,
   },
   saveButtonText: {
-    color: '#fff',
+    color: themeColors.background,
     fontWeight: '600',
   },
 });

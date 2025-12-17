@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { colors as themeColors } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 
 export default function InitialSetupScreen() {
@@ -126,7 +127,7 @@ export default function InitialSetupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -141,13 +142,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 10,
-    color: '#2196F3',
+    color: themeColors.primary,
   },
   subtitle: {
     fontSize: 18,
     textAlign: 'center',
     marginBottom: 40,
-    color: '#666',
+    color: themeColors.muted,
   },
   formContainer: {
     width: '100%',
@@ -156,33 +157,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
-    color: '#333',
+    color: themeColors.text,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.surface,
     padding: 15,
     borderRadius: 10,
     marginBottom: 20,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: 'rgba(255,255,255,0.03)',
+    color: themeColors.text,
   },
   helpText: {
     fontSize: 14,
-    color: '#666',
+    color: themeColors.muted,
     marginTop: -15,
     marginBottom: 20,
     fontStyle: 'italic',
   },
   button: {
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.primary,
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 10,
   },
   buttonText: {
-    color: '#fff',
+    color: themeColors.background,
     fontSize: 18,
     fontWeight: '600',
   },
@@ -191,7 +193,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   skipText: {
-    color: '#666',
+    color: themeColors.muted,
     fontSize: 16,
   },
 });

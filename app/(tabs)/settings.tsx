@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { colors as themeColors } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -133,33 +134,29 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.background,
   },
   header: {
     padding: 20,
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.primary,
     paddingTop: 60,
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: themeColors.background,
   },
   section: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.surface,
     margin: 15,
     padding: 20,
     borderRadius: 15,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: themeColors.text,
     marginBottom: 15,
   },
   inputGroup: {
@@ -169,42 +166,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
-    color: '#333',
+    color: themeColors.text,
   },
   input: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: themeColors.card,
     padding: 15,
     borderRadius: 10,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: 'rgba(255,255,255,0.03)',
+    color: themeColors.text,
   },
   helpText: {
     fontSize: 12,
-    color: '#666',
+    color: themeColors.muted,
     marginTop: 5,
     fontStyle: 'italic',
   },
   saveButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: themeColors.primary,
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 10,
   },
   saveButtonText: {
-    color: '#fff',
+    color: themeColors.background,
     fontSize: 16,
     fontWeight: '600',
   },
   signOutButton: {
-    backgroundColor: '#F44336',
+    backgroundColor: themeColors.danger,
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
   },
   signOutButtonText: {
-    color: '#fff',
+    color: themeColors.background,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -214,12 +212,12 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
-    color: '#666',
+    color: themeColors.muted,
     fontWeight: '600',
   },
   footerSubtext: {
     fontSize: 12,
-    color: '#999',
+    color: themeColors.muted,
     marginTop: 3,
   },
 });
