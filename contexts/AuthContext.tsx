@@ -29,6 +29,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
+  clearFirstTimeLoginFlag: () => Promise<void>;
   biometricLogin: () => Promise<void>;
   enableBiometric: (email: string, password: string) => Promise<boolean>;
   disableBiometric: () => Promise<void>;
@@ -167,6 +168,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
   };
 
+  const clearFirstTimeLoginFlag = async () => {
+    if (user) {
+      await clearFirstTimeLogin(user.uid);
+      setIsFirstTimeLogin(false);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -178,6 +186,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signInWithGoogle,
       signOut,
       clearError,
+      clearFirstTimeLoginFlag,
       biometricLogin,
       enableBiometric,
       disableBiometric: disableBiometricLogin,
@@ -255,5 +264,13 @@ const markFirstTimeLogin = async (uid: string): Promise<void> => {
     await AsyncStorage.setItem(`first_login_${uid}`, 'true');
   } catch (error) {
     console.error('Error marking first time login:', error);
+  }
+};
+
+const clearFirstTimeLogin = async (uid: string): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(`first_login_${uid}`);
+  } catch (error) {
+    console.error('Error clearing first time login flag:', error);
   }
 };

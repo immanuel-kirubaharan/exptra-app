@@ -142,7 +142,7 @@ export default function DashboardScreen() {
               }}
             />
             <Text style={[styles.remainingText, { color: themeColors.onSurfaceVariant, paddingBottom: 16, paddingHorizontal: 20 }]}>
-              ⏰ {getRemainingDaysInMonth()} days remaining this month
+              {getRemainingDaysInMonth()} days remaining this month
             </Text>
           </Card.Content>
         </Card>

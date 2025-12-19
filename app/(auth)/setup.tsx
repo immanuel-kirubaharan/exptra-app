@@ -20,7 +20,7 @@ export default function InitialSetupScreen() {
   const [budget, setBudget] = useState('');
   const [monthStartDate, setMonthStartDate] = useState('1');
   const { updateSettings } = useApp();
-  const { user, isBiometricAvailable } = useAuth();
+  const { user, isBiometricAvailable, clearFirstTimeLoginFlag } = useAuth();
   const router = useRouter();
 
   // Prompt for biometric setup after initial setup is complete
@@ -64,6 +64,9 @@ export default function InitialSetupScreen() {
       isInitialSetupComplete: true,
     });
 
+    // Clear the first-time login flag to prevent setup page from showing again
+    await clearFirstTimeLoginFlag();
+
     // Check and prompt for biometric after setup
     await promptBiometricSetup();
 
@@ -80,6 +83,8 @@ export default function InitialSetupScreen() {
           text: 'Skip',
           onPress: async () => {
             await updateSettings({ isInitialSetupComplete: true });
+            // Clear the first-time login flag to prevent setup page from showing again
+            await clearFirstTimeLoginFlag();
             await promptBiometricSetup();
             router.replace('/(tabs)');
           },

@@ -331,14 +331,14 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: themeColors.background,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderRadius: 20,
   },
   addButtonText: {
     color: themeColors.primary,
     fontWeight: '600',
-    fontSize: 16,
+    fontSize: 14,
   },
   listContainer: {
     padding: 15,

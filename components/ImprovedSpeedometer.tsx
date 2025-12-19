@@ -184,7 +184,7 @@ export default function ImprovedSpeedometer({
   // Animated styles
   const scaleStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scaleAnim.value }],
-    marginTop: -66
+    marginTop: -69
   }));
 
   const glowStyle = useAnimatedStyle(() => ({
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     paddingHorizontal: 20,
-    marginBottom: 16,
+    marginBottom: 25,
   },
   title: {
     fontSize: 18,
