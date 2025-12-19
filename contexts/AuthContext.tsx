@@ -5,21 +5,19 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  User,
-  signInWithCredential,
-  GoogleAuthProvider,
+  User
 } from 'firebase/auth';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { auth } from '../config/firebase';
-import { getNetworkErrorMessage, isNetworkError } from '../utils/networkUtils';
 import {
-  saveBiometricCredentials,
-  getBiometricCredentials,
   disableBiometric,
+  getBiometricCredentials,
+  getSavedEmail,
   isBiometricAvailable,
   isBiometricEnabled,
-  getSavedEmail,
+  saveBiometricCredentials,
 } from '../utils/biometricUtils';
+import { getNetworkErrorMessage, isNetworkError } from '../utils/networkUtils';
 
 interface AuthContextType {
   user: User | null;

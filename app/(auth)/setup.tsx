@@ -58,6 +58,7 @@ export default function InitialSetupScreen() {
 
     await updateSettings({
       nickname,
+      email: user?.email || '',
       monthlyBudget: budgetNum,
       monthStartDate: startDate,
       isInitialSetupComplete: true,

@@ -24,8 +24,9 @@ function RootLayoutNav() {
 
     const inAuthGroup = segments[0] === '(auth)';
     const inTabsGroup = segments[0] === '(tabs)';
+    const currentRoute = segments.join('/');
 
-    console.log('Navigation check:', { user: !!user, inAuthGroup, inTabsGroup, setupComplete: settings.isInitialSetupComplete });
+    console.log('Navigation check:', { user: !!user, inAuthGroup, inTabsGroup, setupComplete: settings.isInitialSetupComplete, currentRoute });
 
     if (!user) {
       if (!inAuthGroup) {
@@ -33,7 +34,9 @@ function RootLayoutNav() {
         router.replace('/(auth)/login');
       }
     } else if (user && !settings.isInitialSetupComplete) {
-      if (!inAuthGroup) {
+      // For first-time setup, check if we're on the setup page, if not redirect to it
+      const isOnSetupPage = currentRoute === '(auth)/setup';
+      if (!isOnSetupPage) {
         console.log('Redirecting to setup');
         router.replace('/(auth)/setup');
       }

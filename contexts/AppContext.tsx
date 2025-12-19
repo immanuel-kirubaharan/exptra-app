@@ -1,11 +1,12 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { db } from '../config/firebase';
 import { useAuth } from './AuthContext';
 
 export interface UserSettings {
   nickname: string;
+  email: string;
   monthlyBudget: number;
   monthStartDate: number;
   isInitialSetupComplete: boolean;
@@ -21,6 +22,7 @@ interface AppContextType {
 
 const defaultSettings: UserSettings = {
   nickname: '',
+  email: '',
   monthlyBudget: 0,
   monthStartDate: 1,
   isInitialSetupComplete: false,
