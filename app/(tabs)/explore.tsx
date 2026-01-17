@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MonthSelector from '../../components/MonthSelector';
 import { CATEGORIES, CATEGORY_ICONS } from '../../constants/categories';
 import { colors as themeColors } from '../../constants/theme';
@@ -21,6 +22,7 @@ export default function TransactionsScreen() {
   const { transactions, addTransaction, deleteTransaction, updateTransaction, getMonthlyTransactions } = useTransactions();
   const { accounts, updateAccountBalance } = useAccounts();
   const { settings } = useApp();
+  const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -167,7 +169,7 @@ export default function TransactionsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Text style={styles.headerTitle}>Transactions</Text>
         <TouchableOpacity 
           style={styles.addButton}
@@ -323,7 +325,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     backgroundColor: themeColors.primary,
-    paddingTop: 60,
+    paddingBottom: 16,
   },
   headerTitle: {
     fontSize: 28,

@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MonthSelector from '../../components/MonthSelector';
 import { colors as themeColors } from '../../constants/theme';
 import { useAccounts } from '../../contexts/AccountContext';
@@ -22,6 +23,7 @@ import { Bill, useTransactions } from '../../contexts/TransactionContext';
 export default function BillsScreen() {
   const { bills, addBill, updateBill, deleteBill, markBillAsPaid, undoBillPayment, getPendingBills, getOverdueBills, getBillAmountForMonth, updateBillAmountForMonth } = useTransactions();
   const { accounts } = useAccounts();
+  const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingBill, setEditingBill] = useState<Bill | null>(null);
   const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'overdue'>('all');
@@ -316,7 +318,7 @@ export default function BillsScreen() {
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }] }>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Text style={styles.headerTitle}>Bills & EMI</Text>
         <TouchableOpacity style={styles.addButton} onPress={openAddModal}>
           <Text style={styles.addButtonText}>+ Add</Text>
@@ -575,7 +577,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     backgroundColor: themeColors.primary,
-    paddingTop: 60,
+    paddingBottom: 16,
   },
   headerTitle: {
     fontSize: 28,

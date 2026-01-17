@@ -24,7 +24,7 @@ interface ImprovedSpeedometerProps {
   size?: number;
   title?: string;
   showAnimation?: boolean;
-  onStatusChange?: (status: 'safe' | 'caution' | 'alert') => void;
+  onStatusChange?: (status: 'safe' | 'caution' | 'alert' | 'over') => void;
 }
 
 export default function ImprovedSpeedometer({
@@ -40,7 +40,7 @@ export default function ImprovedSpeedometer({
   const glowAnim = useSharedValue(0.3);
   const [displayValue, setDisplayValue] = React.useState(value);
   const [displayPercentage, setDisplayPercentage] = React.useState(0);
-  const [status, setStatus] = React.useState<'safe' | 'caution' | 'alert'>('safe');
+  const [status, setStatus] = React.useState<'safe' | 'caution' | 'alert' | 'over'>('safe');
 
   // Initialize and update animations
   useEffect(() => {
@@ -78,9 +78,10 @@ export default function ImprovedSpeedometer({
       runOnJS(setDisplayValue)(Math.round(clampedValue));
       runOnJS(setDisplayPercentage)(Math.round(percent));
 
-      // Determine status
-      let newStatus: 'safe' | 'caution' | 'alert' = 'safe';
-      if (percent >= 80) newStatus = 'alert';
+  // Determine status
+      let newStatus: 'safe' | 'caution' | 'alert' | 'over' = 'safe';
+      if (percent > 100) newStatus = 'over';
+      else if (percent >= 80) newStatus = 'alert';
       else if (percent >= 50) newStatus = 'caution';
 
       if (newStatus !== status) {
@@ -105,6 +106,16 @@ export default function ImprovedSpeedometer({
 
   // Color system
   const getColors = () => {
+    // Check if budget is exceeded
+    if (percentage >= 100) {
+      return {
+        primary: '#DC2626',
+        secondary: '#EF4444',
+        light: '#FEE2E2',
+        glow: 'rgba(220, 38, 38, 0.4)',
+      };
+    }
+    
     switch (status) {
       case 'safe':
         return {
@@ -166,11 +177,16 @@ export default function ImprovedSpeedometer({
 
   // Status text
   const getStatusText = () => {
+    if (percentage >= 100) {
+      return 'Over Budget';
+    }
     switch (status) {
       case 'safe':
         return 'Safe to Spend';
       case 'caution':
         return 'Use Wisely';
+      case 'over':
+        return 'Limit Exceeded';
       case 'alert':
         return 'Limit Approaching';
       default:
@@ -347,7 +363,9 @@ export default function ImprovedSpeedometer({
             {getStatusText()}
           </Text>
           <Text style={[styles.statusSubText, { color: themeColors.muted }]}>
-            {percentage < 50
+            {percentage >= 100
+              ? 'Over the budget limit'
+              : percentage < 50
               ? 'Spending is healthy'
               : percentage < 80
               ? 'Monitor your spending'

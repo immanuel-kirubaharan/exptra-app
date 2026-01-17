@@ -102,9 +102,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
   disabledButton: {
     backgroundColor: 'rgba(255,255,255,0.02)',
+    borderColor: 'rgba(255,255,255,0.1)',
+    opacity: 0.5,
   },
   navButtonText: {
     color: themeColors.primary,
@@ -113,6 +117,7 @@ const styles = StyleSheet.create({
   },
   disabledText: {
     color: 'rgba(255,255,255,0.2)',
+    fontSize: 16,
   },
   monthDisplay: {
     flex: 1,

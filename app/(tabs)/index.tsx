@@ -10,6 +10,7 @@ import {
   View
 } from 'react-native';
 import { Card, List, Surface, useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ImprovedSpeedometer from '../../components/ImprovedSpeedometer';
 import MonthSelector from '../../components/MonthSelector';
 import PieChart from '../../components/PieChart';
@@ -33,6 +34,7 @@ export default function DashboardScreen() {
   const { settings } = useApp();
   const { getMonthlyTransactions, getTotalExpense, getTotalIncome, getPendingBills, getOverdueBills, getCategoryWiseExpense, getAccountWiseData } = useTransactions();
   const { getTotalBalance } = useAccounts();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -113,7 +115,7 @@ export default function DashboardScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <Surface style={[styles.header, { backgroundColor: themeColors.primary }] }>
+      <Surface style={[styles.header, { backgroundColor: themeColors.primary, paddingTop: insets.top + 16 }] }>
         <Text style={[styles.greeting, { color: themeColors.background }]}>Hello, {settings.nickname || 'User'}</Text>
         <Text style={[styles.subtitle, { color: themeColors.background }]}>Here's your expense overview</Text>
       </Surface>
@@ -265,8 +267,7 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     backgroundColor: themeColors.primary,
-    paddingTop: 60,
-    paddingBottom: 8,
+    paddingBottom: 16,
   },
   greeting: {
     fontSize: 28,
