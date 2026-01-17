@@ -187,6 +187,7 @@ export default function TransactionsScreen() {
           setSelectedMonth(month);
           setSelectedYear(year);
         }}
+        allowFutureMonths={false}
       />
 
       <FlatList

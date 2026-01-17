@@ -6,12 +6,14 @@ interface MonthSelectorProps {
   selectedMonth: number;
   selectedYear: number;
   onMonthChange: (month: number, year: number) => void;
+  allowFutureMonths?: boolean;
 }
 
 export default function MonthSelector({
   selectedMonth,
   selectedYear,
   onMonthChange,
+  allowFutureMonths = false,
 }: MonthSelectorProps) {
   const today = new Date();
   const currentMonth = today.getMonth();
@@ -29,10 +31,17 @@ export default function MonthSelector({
       newYear -= 1;
     }
 
+    // Check if the new month is in the future and if future months are not allowed
+    if (!allowFutureMonths && (newYear > currentYear || (newYear === currentYear && newMonth > currentMonth))) {
+      return; // Don't allow navigation to future months
+    }
+
     onMonthChange(newMonth, newYear);
   };
 
   const isCurrentMonth = selectedMonth === currentMonth && selectedYear === currentYear;
+  const isFutureMonth = selectedYear > currentYear || (selectedYear === currentYear && selectedMonth > currentMonth);
+  const canNavigateNext = allowFutureMonths || !isFutureMonth || selectedMonth < currentMonth;
 
   const monthName = new Date(selectedYear, selectedMonth).toLocaleString(undefined, {
     month: 'long',
@@ -55,9 +64,10 @@ export default function MonthSelector({
 
       <TouchableOpacity
         onPress={() => shiftMonth(1)}
-        style={styles.navButton}
+        style={[styles.navButton, !canNavigateNext && styles.disabledButton]}
+        disabled={!canNavigateNext}
       >
-        <Text style={styles.navButtonText}>▶</Text>
+        <Text style={[styles.navButtonText, !canNavigateNext && styles.disabledText]}>▶</Text>
       </TouchableOpacity>
 
       {!isCurrentMonth && (
@@ -93,10 +103,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  disabledButton: {
+    backgroundColor: 'rgba(255,255,255,0.02)',
+  },
   navButtonText: {
     color: themeColors.primary,
     fontSize: 18,
     fontWeight: '600',
+  },
+  disabledText: {
+    color: 'rgba(255,255,255,0.2)',
   },
   monthDisplay: {
     flex: 1,

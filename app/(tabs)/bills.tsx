@@ -248,6 +248,11 @@ export default function BillsScreen() {
   };
 
   const renderBill = ({ item }: { item: Bill }) => {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const isFutureMonth = selectedYear > currentYear || (selectedYear === currentYear && selectedMonth > currentMonth);
+    
     const isOverdue = item.status === 'overdue';
     const hasPaidThisMonth = item.payments?.some(p => p.year === selectedYear && p.month === selectedMonth);
     const isPaid = item.frequency === 'one-time' ? item.status === 'paid' : !!hasPaidThisMonth;
@@ -289,7 +294,7 @@ export default function BillsScreen() {
             </Text>
           </View>
           
-          {!isPaid && (
+          {!isPaid && !isFutureMonth && (
             <TouchableOpacity
               style={styles.payButton}
               onPress={() => handleMarkAsPaid(item)}
@@ -325,6 +330,7 @@ export default function BillsScreen() {
           setSelectedMonth(month);
           setSelectedYear(year);
         }}
+        allowFutureMonths={true}
       />
 
       <View style={styles.tabs}>

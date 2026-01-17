@@ -125,6 +125,7 @@ export default function DashboardScreen() {
           setSelectedMonth(month);
           setSelectedYear(year);
         }}
+        allowFutureMonths={false}
       />
 
       <Animated.View style={[styles.speedometerContainer, { transform: [{ scale: fadeAnim.interpolate({ inputRange: [0,1], outputRange: [0.98,1] }) }] }] }>
