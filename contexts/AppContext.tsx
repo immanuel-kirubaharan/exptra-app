@@ -6,9 +6,6 @@ import { useAuth } from './AuthContext';
 
 export interface NotificationPreferences {
   enabled: boolean;
-  notificationTime: number; // Hour (0-23)
-  notificationType: 'funny' | 'formal' | 'mixed';
-  sendDaily: boolean;
 }
 
 export interface UserSettings {
@@ -37,9 +34,6 @@ const defaultSettings: UserSettings = {
   biometricEnabled: false,
   notificationPreferences: {
     enabled: false,
-    notificationTime: 18, // 6 PM
-    notificationType: 'mixed',
-    sendDaily: true,
   },
 };
 

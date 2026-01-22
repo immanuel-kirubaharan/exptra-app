@@ -5,7 +5,9 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  User
+  User,
+  reauthenticateWithCredential,
+  EmailAuthProvider
 } from 'firebase/auth';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { auth } from '../config/firebase';
@@ -26,7 +28,6 @@ interface AuthContextType {
   isFirstTimeLogin: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
   clearFirstTimeLoginFlag: () => Promise<void>;
@@ -36,6 +37,7 @@ interface AuthContextType {
   isBiometricAvailable: () => Promise<boolean>;
   isBiometricEnabled: () => Promise<boolean>;
   getSavedEmail: () => Promise<string | null>;
+  validatePassword: (password: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -93,17 +95,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signInWithGoogle = async () => {
+  const validatePassword = async (password: string): Promise<boolean> => {
     try {
-      setError(null);
-      // This will be implemented with proper Google Sign-In integration
-      throw new Error('Google Sign-In not yet configured. Please use email/password for now.');
-    } catch (err: any) {
-      const errorMessage = isNetworkError(err)
-        ? getNetworkErrorMessage()
-        : err.message || 'Google Sign-In failed';
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      if (!user || !user.email) {
+        return false;
+      }
+      
+      // Attempt to re-authenticate without signing out the current user
+      const credential = EmailAuthProvider.credential(user.email, password);
+      await reauthenticateWithCredential(user, credential);
+      return true;
+    } catch (error: any) {
+      // Handle different error codes
+      if (error.code === 'auth/wrong-password') {
+        setError('Incorrect password. Please try again.');
+      } else if (error.code === 'auth/user-not-found') {
+        setError('User account not found.');
+      } else if (error.code === 'auth/invalid-email') {
+        setError('Invalid email address.');
+      } else {
+        setError('Password validation failed. Please try again.');
+      }
+      console.error('Password validation error:', error);
+      return false;
     }
   };
 
@@ -114,7 +128,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!credentials) {
         throw new Error('Biometric authentication failed or was cancelled');
       }
-      await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
+      // Ensure email is trimmed and lowercase for Firebase consistency
+      const cleanEmail = credentials.email.trim().toLowerCase();
+      await signInWithEmailAndPassword(auth, cleanEmail, credentials.password);
     } catch (err: any) {
       const errorMessage = isNetworkError(err)
         ? getNetworkErrorMessage()
@@ -126,7 +142,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const enableBiometric = async (email: string, password: string): Promise<boolean> => {
     try {
-      const success = await saveBiometricCredentials(email, password);
+      // First validate the password
+      const isPasswordValid = await validatePassword(password);
+      if (!isPasswordValid) {
+        setError('Incorrect password. Please try again.');
+        return false;
+      }
+
+      // Normalize email before saving (trim and lowercase)
+      const normalizedEmail = email.trim().toLowerCase();
+      const success = await saveBiometricCredentials(normalizedEmail, password);
       if (success) {
         setError(null);
       } else {
@@ -183,7 +208,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isFirstTimeLogin,
       signIn,
       signUp,
-      signInWithGoogle,
       signOut,
       clearError,
       clearFirstTimeLoginFlag,
@@ -193,6 +217,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isBiometricAvailable,
       isBiometricEnabled,
       getSavedEmail,
+      validatePassword,
     }}>
       {children}
     </AuthContext.Provider>

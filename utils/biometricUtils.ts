@@ -50,12 +50,14 @@ export const saveBiometricCredentials = async (
       return false;
     }
 
-    const credentials: BiometricCredentials = { email, password };
+    // Normalize email before saving (trim and lowercase to match signup)
+    const normalizedEmail = email.trim().toLowerCase();
+    const credentials: BiometricCredentials = { email: normalizedEmail, password };
     await SecureStore.setItemAsync(
       BIOMETRIC_CREDENTIALS_KEY,
       JSON.stringify(credentials)
     );
-    await SecureStore.setItemAsync(BIOMETRIC_EMAIL_KEY, email);
+    await SecureStore.setItemAsync(BIOMETRIC_EMAIL_KEY, normalizedEmail);
     await SecureStore.setItemAsync(BIOMETRIC_ENABLED_KEY, 'true');
 
     return true;
@@ -112,7 +114,19 @@ export const getSavedEmail = async (): Promise<string | null> => {
 export const isBiometricEnabled = async (): Promise<boolean> => {
   try {
     const enabled = await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY);
-    return enabled === 'true';
+    if (enabled !== 'true') {
+      return false;
+    }
+
+    // Verify credentials actually exist (reinstall check)
+    const credentials = await SecureStore.getItemAsync(BIOMETRIC_CREDENTIALS_KEY);
+    if (!credentials) {
+      // Credentials were lost (likely due to app reinstall), disable biometric
+      await disableBiometric();
+      return false;
+    }
+
+    return true;
   } catch (error) {
     console.error('Error checking if biometric is enabled:', error);
     return false;

@@ -124,6 +124,14 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  // Initialize Google Sign-In
+  useEffect(() => {
+    // GoogleSignin.configure({
+    //   webClientId: '904217172879-4sq94hcv3ko7nuj6v8gfq9b0jf7q9h3d.apps.googleusercontent.com',
+    //   offlineAccess: false,
+    // });
+  }, []);
+
   return (
     <AuthProvider>
       <AppProvider>

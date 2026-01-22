@@ -1,6 +1,6 @@
+import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
 
 // This hook handles Google Sign-In integration
 // Currently configured for Firebase Authentication

@@ -99,50 +99,54 @@ export const saveNotificationSettings = async (
 /**
  * Schedule daily notification
  */
-export const scheduleDailyNotification = async (
-  hour: number,
-  minute: number = 0,
-  notificationType: 'funny' | 'formal' | 'mixed' = 'mixed'
-): Promise<string> => {
+/**
+ * Schedule 3 random notifications per day with mixed message styles
+ */
+export const scheduleDailyNotification = async (): Promise<string> => {
   try {
     // Cancel any existing scheduled notifications
     await Notifications.cancelAllScheduledNotificationsAsync();
 
-    const now = new Date();
-    const scheduledTime = new Date();
-    scheduledTime.setHours(hour, minute, 0, 0);
+    // Schedule 3 random times throughout the day (morning, afternoon, evening)
+    const times = [
+      { hour: 8 + Math.floor(Math.random() * 2), minute: Math.floor(Math.random() * 60) }, // 8-9 AM
+      { hour: 12 + Math.floor(Math.random() * 3), minute: Math.floor(Math.random() * 60) }, // 12-2 PM
+      { hour: 18 + Math.floor(Math.random() * 4), minute: Math.floor(Math.random() * 60) }, // 6-9 PM
+    ];
 
-    // If the time has already passed today, schedule for tomorrow
-    if (scheduledTime <= now) {
-      scheduledTime.setDate(scheduledTime.getDate() + 1);
+    const notificationIds: string[] = [];
+
+    for (const time of times) {
+      // Mix funny and formal messages
+      const style = Math.random() > 0.5 ? 'funny' : 'formal';
+      const message = getRandomNotificationMessage(style);
+
+      const trigger = {
+        type: 'daily' as const,
+        hour: time.hour,
+        minute: time.minute,
+      };
+
+      const notificationId = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '💼 Add Your Transactions',
+          body: message,
+          data: { type: 'daily_reminder' },
+          sound: 'default',
+        },
+        trigger,
+      });
+
+      notificationIds.push(notificationId);
     }
 
-    const message = getRandomNotificationMessage(notificationType);
-
-    // Calculate trigger time - using daily notification type
-    const trigger = {
-      type: 'daily' as const,
-      hour,
-      minute,
-    };
-
-    const notificationId = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: '💼 Add Your Transactions',
-        body: message,
-        data: { type: 'daily_reminder' },
-        sound: 'default',
-      },
-      trigger,
-    });
-
-    // Store the notification ID for reference
+    // Store the notification IDs for reference
     await AsyncStorage.setItem(
-      'scheduled_notification_id',
-      JSON.stringify(notificationId)
+      'scheduled_notification_ids',
+      JSON.stringify(notificationIds)
     );
 
-    return notificationId;
+    return notificationIds[0]; // Return first ID as primary
   } catch (error) {
     console.error('Error scheduling notification:', error);
     throw error;

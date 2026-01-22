@@ -21,7 +21,7 @@ import { useAuth } from '../../contexts/AuthContext';
 export default function SettingsScreen() {
   const router = useRouter();
   const { settings, updateSettings } = useApp();
-  const { user, signOut, disableBiometric, enableBiometric, isBiometricAvailable } = useAuth();
+  const { user, signOut, disableBiometric, enableBiometric, isBiometricAvailable, error: authError, clearError } = useAuth();
   
   const [nickname, setNickname] = useState(settings.nickname);
   const [budget, setBudget] = useState(settings.monthlyBudget.toString());
@@ -31,12 +31,10 @@ export default function SettingsScreen() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
   const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(
     settings.notificationPreferences || {
       enabled: false,
-      notificationTime: 18,
-      notificationType: 'mixed',
-      sendDaily: true,
     }
   );
 
@@ -80,40 +78,46 @@ export default function SettingsScreen() {
 
   const handleEnableBiometric = async () => {
     if (!passwordInput.trim()) {
-      Alert.alert('Error', 'Please enter your password');
+      setPasswordError('Please enter your password');
       return;
     }
 
+    setPasswordError('');
     setIsProcessing(true);
     try {
       const userEmail = user?.email || '';
       if (!userEmail) {
-        Alert.alert('Error', 'Could not retrieve user email');
+        setPasswordError('Could not retrieve user email');
         setBiometricEnabled(false);
-        setShowPasswordModal(false);
         setIsProcessing(false);
         return;
       }
 
-      // Save biometric credentials
+      // Call enableBiometric which now validates password first
       const success = await enableBiometric(userEmail, passwordInput);
       if (success) {
         setBiometricEnabled(true);
         await updateSettings({ biometricEnabled: true });
         setShowPasswordModal(false);
         setPasswordInput('');
+        setPasswordError('');
         Alert.alert(
           'Success',
-          'Biometric login has been enabled successfully.'
+          'Biometric login has been enabled successfully. You can now use your fingerprint to login!'
         );
+        clearError();
       } else {
         setBiometricEnabled(false);
-        Alert.alert('Error', 'Failed to enable biometric. Please check your password and try again.');
+        // Show error from auth context or generic error - displayed inline in modal
+        const errorMsg = authError || 'Incorrect password. Please try again.';
+        setPasswordError(errorMsg);
+        // Don't show alert - user can see the error inline and retry
+        clearError();
       }
     } catch (error: any) {
       console.error('Error enabling biometric:', error);
       setBiometricEnabled(false);
-      Alert.alert('Error', error.message || 'Failed to enable biometric');
+      setPasswordError(error.message || 'Failed to enable biometric. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -123,6 +127,8 @@ export default function SettingsScreen() {
     setBiometricEnabled(false);
     setShowPasswordModal(false);
     setPasswordInput('');
+    setPasswordError('');
+    clearError();
   };
 
   const handleSave = async () => {
@@ -306,14 +312,18 @@ export default function SettingsScreen() {
             </Text>
 
             <TextInput
-              style={styles.modalInput}
+              style={[styles.modalInput, passwordError ? styles.inputError : null]}
               placeholder="Enter your password"
               secureTextEntry
               value={passwordInput}
-              onChangeText={setPasswordInput}
+              onChangeText={(text) => {
+                setPasswordInput(text);
+                setPasswordError('');
+              }}
               editable={!isProcessing}
               placeholderTextColor="#999"
             />
+            {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
             <View style={styles.modalButtonContainer}>
               <TouchableOpacity
@@ -530,5 +540,14 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  inputError: {
+    borderColor: themeColors.danger,
+  },
+  errorText: {
+    color: themeColors.danger,
+    fontSize: 12,
+    marginBottom: 12,
+    marginTop: -8,
   },
 });

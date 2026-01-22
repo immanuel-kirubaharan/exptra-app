@@ -1,5 +1,5 @@
-import { useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -134,16 +134,10 @@ export default function LoginScreen() {
   const handleGoogleAuth = async () => {
     setLoading(true);
     try {
-      // Note: To enable Google Sign-In, follow docs/GOOGLE_SIGNIN_SETUP.md
-      // This requires OAuth credentials and configuration
-      Alert.alert(
-        'Google Sign-In Setup Required',
-        'To enable Google Sign-In, please follow the setup guide in docs/GOOGLE_SIGNIN_SETUP.md',
-        [{ text: 'OK' }]
-      );
-      setLoading(false);
+      // await signInWithGoogle();
     } catch (error: any) {
-      Alert.alert('Error', 'Google Sign-In setup required');
+      Alert.alert('Google Sign-In Failed', error.message);
+    } finally {
       setLoading(false);
     }
   };
@@ -164,7 +158,7 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.formContainer}>
-          {biometricEnabled && savedEmail && !isSignUp && (
+          {!isSignUp && biometricAvailable && biometricEnabled && savedEmail && (
             <>
               <View style={styles.biometricContainer}>
                 <TouchableOpacity
@@ -239,22 +233,23 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
-          {/* {isSignUp && (
-            <TouchableOpacity
-              style={[styles.googleButton, loading ? styles.buttonDisabled : null]}
-              onPress={handleGoogleAuth}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <>
-                  <MaterialIcons name="g-translate" size={20} color="#fff" />
-                  <Text style={styles.googleButtonText}>Sign Up with Google</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          )} */}
+          {/* Google Sign-In Button */}
+          {/* <TouchableOpacity
+            style={[styles.googleButton, loading ? styles.buttonDisabled : null]}
+            onPress={handleGoogleAuth}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <MaterialIcons name="g-translate" size={20} color="#fff" />
+                <Text style={styles.googleButtonText}>
+                  {isSignUp ? 'Sign Up with Google' : 'Sign In with Google'}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity> */}
 
           <TouchableOpacity
             onPress={() => {
